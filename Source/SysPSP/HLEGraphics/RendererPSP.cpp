@@ -22,6 +22,29 @@
 
 
 //Draw normal filled triangles
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+// Only compiled for controlled renderer experiments; disabled in normal builds.
+static void FrogDiagnosticDraw(int primitive, int type, int count, const void *indices, const void *data)
+{
+    if (!(type & GU_TRANSFORM_2D)) {
+        if (gFrogRenderDiagnostics & (8 | 256)) {
+            auto *vertices = const_cast<DaedalusVtx *>(static_cast<const DaedalusVtx *>(data));
+            for (int i = 0; i < count; ++i)
+                vertices[i].Colour = c32((gFrogRenderDiagnostics & 256) ? 0xffffffff : vertices[i].Colour.GetColour() | 0xff000000);
+        }
+        if (gFrogRenderDiagnostics & 256) sceGuDisable(GU_TEXTURE_2D);
+        if (gFrogRenderDiagnostics & 16) sceGuDisable(GU_ALPHA_TEST);
+        if (gFrogRenderDiagnostics & 32) sceGuDisable(GU_BLEND);
+        if (gFrogRenderDiagnostics & 64) sceGuDisable(GU_DEPTH_TEST);
+        if (gFrogRenderDiagnostics & 512) sceGuDisable(GU_CLIP_PLANES);
+        if (gFrogRenderDiagnostics & 1024) sceGuDisable(GU_CULL_FACE);
+        if (gFrogRenderDiagnostics & 2048) sceGuDisable(GU_FOG);
+    }
+    sceGuDrawArray(primitive, type, count, indices, data);
+}
+#define sceGuDrawArray FrogDiagnosticDraw
+#endif
+
 #define DRAW_MODE GU_TRIANGLES
 //Draw lines
 //Also enable clean scene in advanced menu //Corn
@@ -314,6 +337,10 @@ RendererPSP::SBlendStateEntry RendererPSP::LookupBlendState( u64 mux, bool two_c
 	printf( "Adding %08x%08x - %d cycles - %s\n", u32(mux>>32), u32(mux), two_cycles ? 2 : 1, entry.States->IsInexact() ?  IsCombinerStateDefault(mux) ? "Inexact(Default)" : "Inexact(Override)" : entry.OverrideFunction==nullptr ? "Auto" : "Forced");
 #endif
 
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+    printf("Frog combiner: %08lx%08lx cycles=%u passes=%lu override=%d\n", (unsigned long)(mux >> 32), (unsigned long)u32(mux), two_cycles ? 2 : 1, (unsigned long)entry.States->GetNumStates(), entry.OverrideFunction != nullptr);
+#endif
+
 	//Add blend mode to the Blend States Map
 	mBlendStatesMap[ key._u64 ] = entry;
 
@@ -322,6 +349,18 @@ RendererPSP::SBlendStateEntry RendererPSP::LookupBlendState( u64 mux, bool two_c
 
 void RendererPSP::RenderTriangles( DaedalusVtx * p_vertices, u32 num_vertices, bool disable_zbuffer )
 {
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+    if (gFrogRenderDiagnostics & 4096) {
+        sceGuDisable(GU_TEXTURE_2D);
+        sceGuDisable(GU_BLEND);
+        sceGuDisable(GU_ALPHA_TEST);
+        sceGuDisable(GU_DEPTH_TEST);
+        sceGuDisable(GU_FOG);
+        for (u32 i = 0; i < num_vertices; ++i) p_vertices[i].Colour = c32(0xffffffff);
+        sceGuDrawArray(GU_TRIANGLES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, num_vertices, nullptr, p_vertices);
+        return;
+    }
+#endif
 	if( mTnL.Flags.Texture )
 	{
 		UpdateTileSnapshots( mTextureTile );

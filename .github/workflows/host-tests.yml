@@ -1,0 +1,32 @@
+name: Host audio tests
+
+on:
+  push:
+    branches: [psp-development]
+  pull_request:
+    branches: [psp-development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audio:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure with ASan and UBSan
+        run: cmake -S tests/audio -B build-tests -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - name: Build
+        run: cmake --build build-tests --parallel 2
+      - name: Test
+        run: ctest --test-dir build-tests --output-on-failure --output-junit audio-results.xml
+      - name: Check ROM header normalization
+        run: python3 -m unittest discover -s tests/headless -p 'test_*.py'
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-audio-tests-${{ github.sha }}
+          path: build-tests/audio-results.xml
+          if-no-files-found: ignore

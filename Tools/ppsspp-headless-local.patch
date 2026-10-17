@@ -1,0 +1,73 @@
+diff --git a/headless/Headless.cpp b/headless/Headless.cpp
+index 508e9488fc..d2e83da040 100644
+--- a/headless/Headless.cpp
++++ b/headless/Headless.cpp
+@@ -66,6 +66,8 @@
+ #include "Core/WebServer.h"
+ #include "Core/HLE/sceUtility.h"
+ #include "Core/SaveState.h"
++#include "Core/AVIDump.h"
++#include "Core/HW/Display.h"
+ #include "GPU/GPUCommon.h"
+ #include "GPU/Common/FramebufferManagerCommon.h"
+ #include "Common/Log.h"
+@@ -503,6 +505,8 @@ static bool RunAutoTest(GraphicsContext *graphicsContext, CoreParameter &corePar
+ 	}
+ 
+ 	bool passed = true;
++	bool dumping = false;
++	int dumpedVCount = 0;
+ 	const double startTime = time_now_d();
+ 	// Emulated time is what you want for "has the game had long enough" - a heavy scene runs many
+ 	// times slower than real time and a near-idle one much faster, so a wall-clock budget says
+@@ -584,6 +588,14 @@ static bool RunAutoTest(GraphicsContext *graphicsContext, CoreParameter &corePar
+ 				gpu->BeginHostFrame(g_Config.GetDisplayLayoutConfig(DeviceOrientation::Landscape));
+ 			}
+ 		}
++		// PPSSPP_DUMP_AV: one video frame per emulated vblank (59.94 Hz) from
++		// the boot, the display buffer as it is, so it runs with the WAV
++		if (g_Config.bDumpFrames && coreState != CORE_POWERDOWN) {
++			if (!dumping)
++				dumping = AVIDump::Start(480, 272);
++			for (const int vcount = __DisplayGetVCount(); dumping && dumpedVCount < vcount; dumpedVCount++)
++				AVIDump::AddFrame();
++		}
+ 		// Without a debugger nothing can resume a stop, so it ends the run.
+ 		if (coreState == CORE_STEPPING_CPU && !opt.debugger) {
+ 			break;
+@@ -644,6 +656,8 @@ static bool RunAutoTest(GraphicsContext *graphicsContext, CoreParameter &corePar
+ 		EndDrawFrame(draw);
+ 	}
+ 
++	if (dumping)
++		AVIDump::Stop();
+ 	PSP_Shutdown(true);
+ 
+ 	if (!opt.bench) {
+@@ -1027,7 +1041,17 @@ int main(int argc, const char* argv[]) {
+ 	g_Config.sProAdhocServer = "localhost";
+ 	g_Config.sMACAddress = "12:34:56:78:9A:BC";
+ 	g_Config.iFirmwareVersion = PSP_DEFAULT_FIRMWARE;
+-	g_Config.iPSPModel = PSP_MODEL_SLIM;
++	g_Config.iPSPModel = getenv("PPSSPP_PSP_MODEL") ? atoi(getenv("PPSSPP_PSP_MODEL")) : PSP_MODEL_SLIM;
++	g_Config.iFrameSkip = getenv("PPSSPP_FRAMESKIP") ? atoi(getenv("PPSSPP_FRAMESKIP")) : 0;
++	// PPSSPP_DUMP_AV=1: record the run, lossless (FFV1 AVI in the memory
++	// stick's PSP/VIDEO, the mixed audio as WAV in PSP/AUDIO)
++	if (getenv("PPSSPP_DUMP_AV")) {
++		g_Config.bDumpFrames = g_Config.bUseFFV1 = g_Config.bDumpVideoOutput = true;
++		g_Config.bDumpAudio = g_Config.bEnableSound = true;
++	}
++	// PPSSPP_DUMP_AUDIO=1: only the mixed audio, as WAV in PSP/AUDIO
++	if (getenv("PPSSPP_DUMP_AUDIO"))
++		g_Config.bDumpAudio = g_Config.bEnableSound = true;
+ 	// Booting an ISO shouldn't rewrite the NAND out from under a test run - and the tests want
+ 	// whatever firmware is installed to stay put. Install one with --unpack-updater instead.
+ 	g_Config.bAutoUpgradeFirmware = false;
+@@ -1204,6 +1228,7 @@ int main(int argc, const char* argv[]) {
+ 		g_Config.memStickDirectory = Path(std::string(getenv("HOME"))) / "Library" / "memstick";
+ #elif !PPSSPP_PLATFORM(ANDROID)
+ 		g_Config.memStickDirectory = Path(std::string(getenv("HOME"))) / ".ppsspp";
++		if (getenv("PPSSPP_MEMSTICK")) g_Config.memStickDirectory = Path(std::string(getenv("PPSSPP_MEMSTICK")));
+ #endif
+ 	}
+ 	// The memstick's NAND, unless --nand says otherwise.

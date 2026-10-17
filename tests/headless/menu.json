@@ -1,0 +1,58 @@
+[
+  {
+    "action": "wait",
+    "seconds": 2.0
+  },
+  {
+    "action": "capture",
+    "name": "menu"
+  },
+  {
+    "action": "press",
+    "button": "down"
+  },
+  {
+    "action": "press",
+    "button": "down"
+  },
+  {
+    "action": "press",
+    "button": "down"
+  },
+  {
+    "action": "press",
+    "button": "down"
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "capture",
+    "name": "about"
+  },
+  {
+    "action": "press",
+    "button": "circle"
+  },
+  {
+    "action": "wait",
+    "seconds": 3
+  },
+  {
+    "action": "capture",
+    "name": "returned-menu"
+  },
+  {
+    "action": "compare",
+    "left": "menu",
+    "right": "returned-menu",
+    "crop": [
+      0,
+      20,
+      480,
+      272
+    ],
+    "max_mse": 0
+  }
+]

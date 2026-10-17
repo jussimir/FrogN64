@@ -418,6 +418,9 @@ void BaseRenderer::UpdateViewport()
 //*****************************************************************************
 bool BaseRenderer::TestVerts(u32 v0, u32 vn) const
 {
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+    if (gFrogRenderDiagnostics & 128) return true;
+#endif
 	if ((vn + v0) >= kMaxN64Vertices) 
 	{
 		DAEDALUS_ERROR("Vertex index is out of bounds (%d)", (vn + v0));
@@ -456,7 +459,11 @@ bool BaseRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 	const u32 & f1 = mVtxProjected[v1].ClipFlags;
 	const u32 & f2 = mVtxProjected[v2].ClipFlags;
 
-	if ( f0 & f1 & f2 )
+	if ( (f0 & f1 & f2)
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+         && !(gFrogRenderDiagnostics & 2)
+#endif
+    )
 	{
 		DL_PF("    Tri: %d,%d,%d (Culled -> NDC box)", v0, v1, v2);
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST		
@@ -468,7 +475,11 @@ bool BaseRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 	//
 	//Cull BACK or FRONT faceing tris early in the pipeline //Corn
 	//
-	if( mTnL.Flags.TriCull )
+	if( mTnL.Flags.TriCull
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+        && !(gFrogRenderDiagnostics & 1)
+#endif
+    )
 	{
 #ifdef DAEDALUS_PSP_USE_VFPU
 		const s32 sign = vfpu_TriNormSign((u8*)&mVtxProjected[0], v0, v1, v2);
@@ -540,7 +551,11 @@ void BaseRenderer::FlushTris()
 	TempVerts temp_verts;
 
 	// If any bit is set here it means we have to clip the trianlges since PSP HW clipping sux!
-	if(mVtxClipFlagsUnion != 0)
+	if(mVtxClipFlagsUnion != 0
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+       && !(gFrogRenderDiagnostics & 4)
+#endif
+    )
 	{
 		PrepareTrisClipped( &temp_verts );
 	}

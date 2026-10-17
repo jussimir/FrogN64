@@ -185,4 +185,8 @@ extern RomInfo g_ROM;
 extern u32 g_dwNumFrames;
 #endif
 
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+extern u32 gFrogRenderDiagnostics;
+#endif
+
 #endif // CORE_ROM_H_

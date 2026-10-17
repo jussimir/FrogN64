@@ -1,0 +1,217 @@
+[
+  {
+    "action": "wait",
+    "seconds": 2
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "wait",
+    "seconds": 70
+  },
+  {
+    "action": "capture",
+    "name": "intro"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.3,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "after-start"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.3,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "after-a"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 3
+  },
+  {
+    "action": "capture",
+    "name": "save-choice"
+  },
+  {
+    "action": "analog",
+    "x": 0,
+    "y": -1,
+    "seconds": 0.12,
+    "settle": 1
+  },
+  {
+    "action": "capture",
+    "name": "save-selection"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 3
+  },
+  {
+    "action": "capture",
+    "name": "main-menu"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 3
+  },
+  {
+    "action": "capture",
+    "name": "actual-main"
+  },
+  {
+    "action": "analog",
+    "x": 0,
+    "y": -1,
+    "seconds": 0.12,
+    "settle": 0.4
+  },
+  {
+    "action": "analog",
+    "x": 0,
+    "y": -1,
+    "seconds": 0.12,
+    "settle": 0.4
+  },
+  {
+    "action": "capture",
+    "name": "single-race-selection"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 3
+  },
+  {
+    "action": "capture",
+    "name": "race-screen1"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 10
+  },
+  {
+    "action": "capture",
+    "name": "race-screen2"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 5
+  },
+  {
+    "action": "capture",
+    "name": "race-screen3"
+  },
+  {
+    "action": "press",
+    "button": "cross",
+    "seconds": 0.15,
+    "settle": 6
+  },
+  {
+    "action": "capture",
+    "name": "grid-0"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-1"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-2"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-3"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-4"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-5"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-6"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-7"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-8"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  },
+  {
+    "action": "capture",
+    "name": "grid-9"
+  },
+  {
+    "action": "wait",
+    "seconds": 1
+  }
+]

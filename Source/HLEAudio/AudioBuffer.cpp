@@ -18,193 +18,101 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "Base/Types.h"
-
-
-#include "Interface/ConfigOptions.h"
-#include "Debug/DBGConsole.h"
 #include "HLEAudio/AudioBuffer.h"
 #include "System/Thread/Thread.h"
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 
-#ifdef DAEDALUS_PSP
-#include "SysPSP/Utility/CacheUtil.h"
-#endif
-
 CAudioBuffer::CAudioBuffer(u32 buffer_size)
-    : mBufferBegin(new Sample[buffer_size]),
-      mBufferEnd(mBufferBegin + buffer_size), mReadPtr(mBufferBegin),
-      mWritePtr(mBufferBegin) {}
+    : mBufferBegin(new Sample[std::max<u32>(2, buffer_size)]),
+      mBufferEnd(mBufferBegin + std::max<u32>(2, buffer_size)),
+      mReadPtr(mBufferBegin), mWritePtr(mBufferBegin) {}
 
 CAudioBuffer::~CAudioBuffer() { delete[] mBufferBegin; }
 
 u32 CAudioBuffer::GetNumBufferedSamples() const {
-  // Todo: Check Cache Routines
-  // #ifdef DAEDALUS_PSP
-  // 	dcache_wbinv_all();
-  // #endif
+  const auto write = mWritePtr.load(std::memory_order_acquire);
+  const auto read = mReadPtr.load(std::memory_order_acquire);
+  auto count = write - read;
+  if (count < 0) count += mBufferEnd - mBufferBegin;
+  return static_cast<u32>(count);
+}
 
-  // Safe? What if we read mWrite, and then mRead moves to start of buffer?
-  s32 diff = mWritePtr - mReadPtr;
-
-  if (diff < 0) {
-    diff += (mBufferEnd - mBufferBegin); // Add on buffer length
+void CAudioBuffer::Push(Sample sample, Sample *&write, const Sample *&read) {
+  Sample *next = write + 1;
+  if (next == mBufferEnd) next = mBufferBegin;
+  if (next == read) {
+    // Publish the partial block before waiting: the consumer must be able
+    // to drain it even when one input block exceeds the whole ring.
+    mWritePtr.store(write, std::memory_order_release);
+    do {
+      ThreadYield();
+      read = mReadPtr.load(std::memory_order_acquire);
+    } while (next == read);
   }
-
-  return diff;
+  *write = sample;
+  write = next;
 }
 
 void CAudioBuffer::AddSamples(const Sample *samples, u32 num_samples,
                               u32 frequency, u32 output_freq) {
-#ifdef DAEDALUS_ENABLE_ASSERTS
-  DAEDALUS_ASSERT(frequency <= output_freq, "Input frequency is too high");
-#endif
-
+  if (!samples || !num_samples || !frequency || !output_freq) return;
 #ifdef DAEDALUS_DEBUG_AUDIO
-std::ofstream fh;
- 
- if (!fh.is_open())
- {
-  fh.open("audio_in.raw",  std::ios::binary);
-fh.write(reinterpret_cast<const char*>(samples), sizeof(Sample) * num_samples);
-fh.flush();
- }
-#endif 
-// clear the Cache
-#ifdef DAEDALUS_PSP
-// sceKernelDcacheWritebackInvalidateAll();
+  std::ofstream input("audio_in.raw", std::ios::binary);
+  input.write(reinterpret_cast<const char *>(samples), sizeof(Sample) * num_samples);
 #endif
-  const Sample *read_ptr(
-      mReadPtr); // No need to invalidate, as this is uncached/volatile
-  Sample *write_ptr(mWritePtr);
-
-  //
-  //	'r' is the number of input samples we progress through for each output
-  //sample. 	's' keeps track of how far between the current two input samples we
-  //are. 	We increment it by 'r' for each output sample we generate. 	When it
-  //reaches 1.0, we know we've hit the next sample, so we increment in_idx 	and
-  //reduce s by 1.0 (to keep it in the range 0.0 .. 1.0) 	Principle is the same
-  //but rewritten to integer mode (faster & less ASM) //Corn
-
-  const s32 r = (frequency << 12) / output_freq;
-  s32 s = 0;
-  u32 in_idx = 0;
-  u32 output_samples = ((num_samples * output_freq) / frequency) - 1;
-
-  for (u32 i = output_samples; i != 0; i--) {
-#ifdef DAEDALUS_ENABLE_ASSERTS
-    DAEDALUS_ASSERT(in_idx + 1 < num_samples,
-                    "Input index out of range - %d / %d", in_idx + 1,
-                    num_samples);
-#endif
-    //#if 0 // 1->Sine tone, 0->Normal
-    // static float c= 0.0f;
-    // c += 100.0f / 44100.0f;
-    // if( c >= 1.0f )
-    //  c-=1.f;
-    // s16 v( s16( SHRT_MAX * sinf( c * 3.141f*2 ) ) );
-    // Sample	out;
-    // s16 v = WriteCounter++;
-    // if( WriteCounter >= MAX_COUNTER )
-    // {
-    // 	printf( "Loop write\n" );
-    // 	WriteCounter = 0;
-    // }
-    // out.L = out.R = v;
-    //
-    // #else
-    // Resample in integer mode (faster & less ASM code) //Corn
-    Sample out;
-
-    out.L = samples[in_idx].L +
-            (((samples[in_idx + 1].L - samples[in_idx].L) * s) >> 12);
-    out.R = samples[in_idx].R +
-            (((samples[in_idx + 1].R - samples[in_idx].R) * s) >> 12);
-
-    s += r;
-    in_idx += s >> 12;
-    s &= 4095;
-    // #endif
-
-    write_ptr++;
-    if (write_ptr >= mBufferEnd)
-      write_ptr = mBufferBegin;
-
-    while (write_ptr == read_ptr) {
-      // The buffer is full - spin until the read pointer advances.
-      //    Note - spends a lot of time here if program is running
-      //    fast. This loop locks the speed to the playback rate
-      //    as the program winds up waiting for the buffer to empty.
-      // ToDo: Adjust Audio Frequency/ Look at Turok in this regard.
-      // We might want to put a Sleep in when executing on the SC?
-      // Give time to other threads when using SYNC mode.
-      // ThreadYield();
-
-      read_ptr = mReadPtr;
-    }
-
-    *write_ptr = out;
+  if (frequency != mInputFrequency || output_freq != mOutputFrequency) {
+    mHasLastInput = false;
+    mPhase = 0;
+    mInputFrequency = frequency;
+    mOutputFrequency = output_freq;
   }
-
-  // Todo: Check Cache Routines
-  //  Ensure samples array is written back before mWritePtr
-  // dcache_wbinv_range_unaligned( mBufferBegin, mBufferEnd );
-
-  mWritePtr = write_ptr; // Needs cache wbinv
+  Sample *write = mWritePtr.load(std::memory_order_relaxed);
+  const Sample *read = mReadPtr.load(std::memory_order_acquire);
+  for (u32 i = 0; i < num_samples; ++i) {
+    const Sample current = samples[i];
+    if (!mHasLastInput) {
+      Push(current, write, read);
+      mHasLastInput = true;
+      mPhase = frequency;
+    } else {
+      // Phase is measured in output-frequency units of one input interval.
+      // Carry it and the preceding sample across packets, so packet boundaries
+      // cannot reset interpolation or drop a sample on every AI buffer.
+      while (mPhase <= output_freq) {
+        Sample out;
+        if (mPhase == output_freq) {
+          out = current;
+        } else {
+          const s32 fraction = static_cast<s32>((mPhase << 12) / output_freq);
+          out.L = static_cast<s16>(mLastInput.L + (((current.L - mLastInput.L) * fraction) >> 12));
+          out.R = static_cast<s16>(mLastInput.R + (((current.R - mLastInput.R) * fraction) >> 12));
+        }
+        Push(out, write, read);
+        mPhase += frequency;
+      }
+      mPhase -= output_freq;
+    }
+    mLastInput = current;
+  }
+  mWritePtr.store(write, std::memory_order_release);
 }
 
 u32 CAudioBuffer::Drain(Sample *samples, u32 num_samples) {
-// Todo: Check Cache Routines
-//  Ideally we could just invalidate this range?
-// clear the Cache
-#ifdef DAEDALUS_PSP
-// sceKernelDcacheWritebackInvalidateAll();
-#endif
-
-  const Sample *read_ptr(mReadPtr); // No need to invalidate, as this is uncached/volatile
-  const Sample *write_ptr(mWritePtr); //
-
-  Sample *out_ptr(samples);
-  u32 samples_required(num_samples);
-
-  while (samples_required > 0) {
-    // Check if empty
-    if (read_ptr == write_ptr)
-      break;
-
-    *out_ptr++ = *read_ptr++;
-
-    if (read_ptr >= mBufferEnd)
-      read_ptr = mBufferBegin;
-
-    samples_required--;
+  if (!samples || !num_samples) return 0;
+  const Sample *read = mReadPtr.load(std::memory_order_relaxed);
+  const Sample *write = mWritePtr.load(std::memory_order_acquire);
+  u32 count = 0;
+  while (count < num_samples && read != write) {
+    samples[count++] = *read++;
+    if (read == mBufferEnd) read = mBufferBegin;
   }
-
+  mReadPtr.store(read, std::memory_order_release);
+  if (count < num_samples) std::memset(samples + count, 0, (num_samples - count) * sizeof(Sample));
 #ifdef DAEDALUS_DEBUG_AUDIO
-std::ofstream fh;
-
- if (!fh.is_open())
- {
-  fh.open("audio_out.raw",  std::ios::binary);
-  fh.write(reinterpret_cast<const char*>(samples), sizeof(Sample) * num_samples - samples_required);
-  fh.flush();
- }
-#endif 
-  mReadPtr = read_ptr; // No need to invalidate, as this is uncached
-// clear the Cache
-#ifdef DAEDALUS_PSP
-// sceKernelDcacheWritebackInvalidateAll();
+  std::ofstream output("audio_out.raw", std::ios::binary);
+  output.write(reinterpret_cast<const char *>(samples), sizeof(Sample) * count);
 #endif
-  //
-  //	If there weren't enough samples, zero out the buffer
-  //	FIXME(strmnnrmn): Unnecessary on OSX...
-  //
-  if (samples_required > 0) {
-    // DBGConsole_Msg( 0, "Buffer underflow (%d samples)\n", samples_required );
-    // printf( "Buffer underflow (%d samples)\n", samples_required );
-    memset(out_ptr, 0, samples_required * sizeof(Sample));
-  }
-
-  // Return the number of samples written
-  return num_samples - samples_required;
+  return count;
 }

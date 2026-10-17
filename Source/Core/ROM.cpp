@@ -348,11 +348,24 @@ void ROM_Unload()
 }
 
 //Most hacks are for the PSP, due the limitations of the hardware, and because we prefer speed over accuracy
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+u32 gFrogRenderDiagnostics = 0;
+#endif
+
 void SpecificGameHacks( const ROMHeader & id )
 {
 	g_ROM.HACKS_u32 = 0;	//Default to no game hacks
 	u16 cart_val = (id.CartID[0] << 8) | id.CartID[1];
 	printf("Cart Value[%04X]\n", cart_val);
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+    gFrogRenderDiagnostics = 0;
+    if (cart_val == 0x4c47) {
+        std::ifstream flags("frogn64-render-debug.txt");
+        u32 value = 0;
+        if (flags >> value) gFrogRenderDiagnostics = value & 8191;
+        printf("Frog render diagnostics: %lu\n", static_cast<unsigned long>(gFrogRenderDiagnostics));
+    }
+#endif
 	switch( cart_val)
 	{
 	case 0x4a32: g_ROM.GameHacks = WONDER_PROJECTJ2;	break;

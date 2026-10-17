@@ -44,7 +44,7 @@ done
 
 make -j "$jobs" -C Tools/psp-volume
 
-psp-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+psp-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFROGN64_RENDER_DIAGNOSTICS=OFF
 cmake --build build --parallel "$jobs"
 
 # Install into a clean staging directory: never package local ROMs or saves.

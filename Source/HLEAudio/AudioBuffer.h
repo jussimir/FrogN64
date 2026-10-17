@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define HLEAUDIO_AUDIOBUFFER_H_
 
 #include "Base/Types.h"
+#include <atomic>
 
 struct Sample {
   s16 L;
@@ -32,8 +33,8 @@ struct Sample {
 // A utility class for buffering up samples, upsampling to the desired
 // output frequency and copying them to the desired output buffer.
 //
-// N.B. This class currently does no synchronisation - it's assumed that
-// the calling code will handle this
+// Single producer / single consumer. Sample writes are published before
+// the consumer can read them; read slots are released before reuse.
 class CAudioBuffer {
 public:
   CAudioBuffer(u32 buffer_size);
@@ -46,11 +47,18 @@ public:
   u32 GetNumBufferedSamples() const;
 
 private:
+  void Push(Sample sample, Sample *&write, const Sample *&read);
+
   Sample *mBufferBegin;
   Sample *mBufferEnd;
 
-  const Sample *volatile mReadPtr;
-  Sample *volatile mWritePtr;
+  std::atomic<const Sample *> mReadPtr;
+  std::atomic<Sample *> mWritePtr;
+  Sample mLastInput{};
+  bool mHasLastInput = false;
+  u32 mInputFrequency = 0;
+  u32 mOutputFrequency = 0;
+  u64 mPhase = 0;
 };
 
 #endif // HLEAUDIO_AUDIOBUFFER_H_

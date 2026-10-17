@@ -12,8 +12,9 @@
 Um fork é uma cópia do repositório na sua conta, com histórico e ligação com o
 original. Alterações e pushes neste fork não alteram o projeto original.
 
-O FrogN64 mantém o núcleo de emulação original. Ela prepara compilação,
-empacotamento e testes para futuras melhorias; não promete ganho de FPS.
+O FrogN64 usa o núcleo de emulação do DaedalusX64, com correções na fila de
+áudio verificadas em testes sintéticos. O [ambiente headless](HEADLESS.md)
+permite regressões locais antes do teste físico; não promete ganho de FPS.
 
 O empacotamento define explicitamente `MEMSIZE=1` para solicitar RAM ampliada
 nos modelos compatíveis. O padrão `MEMSIZE=2` da toolchain não ativa essa RAM no

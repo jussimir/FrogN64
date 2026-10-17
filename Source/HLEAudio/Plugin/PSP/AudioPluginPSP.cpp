@@ -167,7 +167,7 @@ AudioPluginPSP::AudioPluginPSP()
 	mAudioBuffer = new( mem ) CAudioBuffer( kAudioBufferSize );
   mAudioBufferUncached = (CAudioBuffer*)make_uncached_ptr(mem);
 	// Ideally we could just invalidate this range?
-	dcache_wbinv_range_unaligned( mAudioBuffer, mAudioBuffer+sizeof( CAudioBuffer ) );
+	dcache_wbinv_range_unaligned( mAudioBuffer, mAudioBuffer + 1 );
 
 	#ifdef DAEDALUS_PSP_USE_ME
 	InitialiseMediaEngine();

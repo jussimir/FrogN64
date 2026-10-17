@@ -252,6 +252,9 @@ UcodeInfo GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_bas
 	}
 	DBGConsole_Msg(0, "Detected Ucode is: [M Ucode %d, 0x%08x, \"%s\", \"%s\"]", ucode_version, code_hash, 
 		str, g_ROM.settings.GameName.c_str());
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+    printf("Frog microcode: %lu %08lx %s\n", (unsigned long)ucode_version, (unsigned long)code_hash, str);
+#endif
 	return GBIMicrocode_SetCache(index, code_base, data_base, gNormalInstruction[ ucode_version ], gNormalInstructionName[ ucode_version ]);
 }
 

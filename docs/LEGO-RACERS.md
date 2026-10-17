@@ -22,7 +22,7 @@ recompilação dinâmica habilitados, além das otimizações de memória, loop 
 doubles. Ainda não houve comparação controlada com essas otimizações
 individualmente desabilitadas. Não foi capturada a cena dos modelos ausentes.
 
-## Pistas no código, ainda sem correção validada
+## Diagnóstico inicial (antes dos testes headless)
 
 O núcleo de áudio e gráficos não foi modificado pela adaptação da interface.
 
@@ -38,12 +38,35 @@ problemas de clipping em LEGO Racers/Rocket Robot. É uma pista para examinar
 as rotinas de recorte e descarte de triângulos, não uma confirmação da causa
 dos karts e torsos ausentes. É necessário comparar a mesma cena antes/depois.
 
-## Próximo teste
-
-Primeiro registrar a cena defeituosa e FPS, depois comparar mudanças isoladas.
-Para o áudio, verificar a fila em testes no host antes de alterar o plugin;
-para gráficos, verificar culling/clipping e estado de renderização por jogo.
-Não há correção de compatibilidade reivindicada nesta versão.
+## Sessão física encerrada
 
 A sessão física foi encerrada e a trava liberada a pedido do usuário para
 outro projeto. Evidências locais: `dist/psplink/frogn64-ui-v1-20261017/`.
+
+## Avanço sintético, sem acesso ao PSP
+
+Os testes do host reproduziram a amostra inicial não escrita, a perda da
+última amostra e o bloqueio com um bloco maior que a fila. A correção faz a
+fila publicar os dados antes de esperar espaço e preserva a fase de
+reamostragem entre pacotes. Os testes estão em `tests/audio/` e foram
+executados também como código MIPS no PPSSPPHeadless, com tom WAV sintético.
+
+O PRX MIPS passou no JIT e interpretador PSP do PPSSPP; o tom WAV passou na
+análise de amplitude, continuidade e canais. O host passou os seis casos com
+ASan/UBSan e o stress com TSan. Isso confirma esses defeitos da fila corrigidos,
+não a eliminação de todos os estalos do LEGO Racers.
+
+Com a ROM local fornecida pelo usuário, o torso ausente foi reproduzido no menu
+e na seleção de piloto. A automação também alcança a largada e salva uma série
+de quadros dos adversários, alguns com geometria parcial. Ainda não foi isolada
+uma cena de desaparecimento completo de kart. A ROM tem o mesmo ID do teste
+físico; seu hash e os roteiros ficam documentados em [HEADLESS.md](HEADLESS.md).
+
+O torso continuou ausente nas comparações sem HLE, sem otimizações de memória,
+loop/doubles e sem VFPU, além dos testes isolados de clipping/alpha/blend/depth.
+Esses experimentos não são correções e ficam fora da build normal. A comparação
+com o interpretador N64 não alcançou a mesma cena; não permite conclusão visual.
+
+Nenhum acesso ao aparelho foi feito nesta etapa. O caminho Sync foi exercitado
+com o EBOOT até a corrida, acima de realtime no Mac; Async/Media Engine e a
+melhora perceptível no áudio ainda precisam da confirmação física posterior.

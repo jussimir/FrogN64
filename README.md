@@ -11,7 +11,8 @@ branch `psp-development`. A base inicial do núcleo é o commit upstream
 A interface PSP tem o fundo verde e seleção creme do FrogGBA, menu vertical,
 navegador de ROMs em duas colunas, jogos recentes, relógio/bateria e menu de
 pausa. As opções de emulação, controles, cheats e savestates usam o código do
-DaedalusX64. Esta etapa não altera o desempenho do núcleo.
+DaedalusX64. A fila de áudio recebeu correções cobertas por testes sintéticos.
+Não há ganho de FPS medido.
 
 ![Menu FrogN64 no PSP real](docs/images/frogn64-menu.png)
 
@@ -25,8 +26,8 @@ que elas já estão. A instalação pode coexistir com DaedalusX64 e FrogGBA.
 O pacote solicita RAM ampliada nos modelos compatíveis (`MEMSIZE=1`).
 
 Veja o [guia PSP](docs/PSP.md), o [guia da interface](docs/FROGN64-UI.md) e o
-[guia PSPLink](docs/PSPLINK.md). Software livre, GPL v2 ou posterior; créditos
-originais preservados, com [atribuição do FrogGBA](Data/licenses/FrogN64-UI.txt).
+[guia PSPLink](docs/PSPLINK.md), além do [ambiente headless](docs/HEADLESS.md).
+Software livre, GPL v2 ou posterior; créditos originais preservados, com [atribuição do FrogGBA](Data/licenses/FrogN64-UI.txt).
 
 ## Documentação original do núcleo DaedalusX64
 

@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compile and package
         run: bash scripts/psp.sh --native
+      - name: Compile MIPS audio regression tests
+        run: make -C tests/audio
       - name: Upload PSP ZIP
         uses: actions/upload-artifact@v4
         with:

@@ -429,6 +429,13 @@ static u32 DLParser_ProcessDList(u32 instruction_limit)
 
 		PROFILE_DL_CMD( command.inst.cmd );
 
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+        static bool seen[256]{};
+        if (!seen[command.inst.cmd]) {
+            seen[command.inst.cmd] = true;
+            printf("Frog command: %02lx %08lx %08lx %s\n", (unsigned long)command.inst.cmd, (unsigned long)command.inst.cmd0, (unsigned long)command.inst.cmd1, gUcodeName[command.inst.cmd]);
+        }
+#endif
 		gUcodeFunc[ command.inst.cmd ]( command );
 
 		DL_END_INSTR();
