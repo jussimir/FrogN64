@@ -15,6 +15,12 @@ original. Alterações e pushes neste fork não alteram o projeto original.
 Esta primeira base mantém o núcleo de emulação original. Ela prepara compilação,
 empacotamento e testes para futuras melhorias; não promete ganho de FPS.
 
+O empacotamento define explicitamente `MEMSIZE=1` para solicitar RAM ampliada
+nos modelos compatíveis. O padrão `MEMSIZE=2` da toolchain não ativa essa RAM no
+PPSSPP 1.20.4, e a base original encerrou com `std::bad_alloc` na inicialização.
+O foco deste pacote é o PSP; o comportamento no modo PSP do PS Vita não foi
+validado.
+
 ## Compilar
 
 Com Docker Desktop iniciado, na raiz do repositório:
@@ -49,10 +55,23 @@ disponível apenas para execução manual.
 3. Coloque suas ROMs em `PSP/GAME/DaedalusX64/Roms/`.
 4. Inicie o DaedalusX64 pelo menu de jogos do PSP com suporte a homebrew.
 
-Para conferir a inicialização no PPSSPP, abra
-`dist/package/PSP/GAME/DaedalusX64/EBOOT.PBP`. Isso verifica somente o que foi
-observado no emulador; desempenho, Media Engine e compatibilidade precisam de
-teste no PSP físico.
+Para conferir a inicialização no PPSSPP, instale a pasta `DaedalusX64` dentro de
+`PSP/GAME/` do Memory Stick virtual e abra seu `EBOOT.PBP`. Isso mantém os
+caminhos de configurações e saves em `ms0:`. No PPSSPP SDL deste Mac, a pasta é
+`~/.config/ppsspp/PSP/GAME/`. Desempenho, Media Engine e compatibilidade precisam
+de teste no PSP físico.
+
+### Validação inicial em 17/10/2026
+
+- Build Release local: PSPSDK em Docker, GCC 15.2.0, dynarec MIPS, VFPU e Media Engine habilitados.
+- Empacotamento: ZIP íntegro, EBOOT em formato PBP e três plugins MIPS presentes.
+- PPSSPP SDL 1.20.4: com `MEMSIZE=2`, encerrou com `std::bad_alloc`; alterando
+  apenas a flag para `1` na cópia de teste, passou da inicialização e começou a
+  renderizar, conforme os logs de framebuffer. Sem ROMs carregadas.
+- O PPSSPP também registrou funções de firmware não implementadas e falhas na
+  abertura das fontes `flash0:/font/*.pgf`. A inspeção visual automática não
+  estava disponível; não foi confirmada a apresentação correta da interface.
+- PSP físico, jogos, áudio e saves: ainda não testados.
 
 Antes de otimizar, registre para cada teste: modelo do PSP, firmware, revisão da
 build, região/revisão do jogo, trecho testado, configurações, FPS, falhas gráficas,

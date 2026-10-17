@@ -16,6 +16,9 @@ Para gerar o pacote PSP com Docker:
 O ZIP será criado em `dist/`. Consulte [o guia de desenvolvimento PSP](docs/PSP.md)
 para instalação, testes e sincronização com o original. Esta base ainda não
 contém otimizações próprias de emulação.
+
+O pacote solicita RAM ampliada nos modelos PSP compatíveis (`MEMSIZE=1`),
+evitando a falha de alocação observada no teste de inicialização no PPSSPP.
  
 DaedalusX64 is a Nintendo 64 emulator for PSP, 3DS, Vita, Linux, macOS and Windows
  

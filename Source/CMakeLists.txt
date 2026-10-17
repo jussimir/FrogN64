@@ -319,6 +319,9 @@ add_definitions(-D_USE_MATH_DEFINES)
 	if(PSP)
 		create_pbp_file(
 			TARGET daedalus
+			# Request expanded RAM on PSP-2000+ explicitly. The SDK default
+			# MEMSIZE=2 is not treated as expanded memory by PPSSPP 1.20.4.
+			MEMSIZE 1
 			PREVIEW_PATH NULL
 			ICON_PATH ${PROJECT_SOURCE_DIR}/Source/SysPSP/Resources/eboot_icons/icon0.png
 			BACKGROUND_PATH ${PROJECT_SOURCE_DIR}/Source/SysPSP/Resources/eboot_icons/pic1.png
