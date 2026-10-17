@@ -26,7 +26,7 @@ Os seis casos verificam ordem/canais estéreo, silêncio no underrun, pacotes de
 uma amostra, reamostragem de uma rampa conhecida, independência das fronteiras
 de pacotes, wrap e produção concorrente de 100 mil amostras em uma fila pequena.
 Cada teste tem timeout: um bloqueio da fila falha em vez de prender o processo.
-O workflow **Host audio tests** executa ASan/UBSan em Linux.
+O workflow **Host regression tests** executa ASan/UBSan em Linux.
 
 Na base `9a715c0`, o caso FIFO devolvia três das quatro amostras, começando por
 memória não inicializada. O bloco maior que a fila não terminava. A correção
@@ -34,6 +34,34 @@ escreve na posição atual, publica blocos parciais antes de esperar, cede CPU
 quando cheia e usa operações acquire/release. A fase e a última amostra da
 reamostragem continuam entre pacotes; a taxa igual não descarta amostras.
 O contrato é um produtor e um consumidor.
+
+## Projeções no host e no MIPS
+
+```sh
+cmake -S tests/graphics -B dist/tests/graphics -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build dist/tests/graphics --parallel 2
+ctest --test-dir dist/tests/graphics --output-on-failure
+```
+
+É necessário GLM nos includes (`libglm-dev` no Ubuntu). Para uma cópia local,
+use `-DGLM_INCLUDE_DIR=/diretorio/que/contem/glm`. Cinco casos analíticos verificam
+projeções misturadas no cache, o caminho sem mudança, mil mudanças consecutivas,
+cópia/recarga e normalização/reset. O controle reproduz o deslocamento original.
+ASan/UBSan são habilitados por padrão. O workflow de regressão executa os casos.
+
+```sh
+docker run --rm --platform linux/amd64 \
+  --mount "type=bind,source=$PWD,target=/workspace" --workdir /workspace \
+  "$(cat Tools/psp-image.txt)" make -C tests/graphics
+
+dist/headless-venv/bin/python Tools/headless.py \
+  --emulator /caminho/PPSSPPHeadless --tag projection-jit \
+  --package tests/graphics --backend null --script tests/headless/projection.json
+# Repetir com outra tag e --cpu interpreter para o núcleo PSP interpretado.
+```
+
+O roteiro exige `FROGN64_PROJECTION_TESTS_PASS` no log do programa MIPS.
+Não usa ROM e verifica a mesma implementação C++ da build do emulador.
 
 ## Código MIPS e WAV sintético
 
@@ -99,7 +127,7 @@ chegar à cena esperada: confira as capturas, especialmente ao trocar o núcleo.
 
 O roteiro JSON usa `wait` (segundos emulados), `press` (botão PSP, com duração e
 tempo após soltar), `analog` (x/y de −1 a 1; y positivo aponta para cima),
-`capture` e `compare`. Os comandos são aplicados com a CPU
+`capture`, `compare` e `expect_log` (exige um texto no log do programa). Os comandos são aplicados com a CPU
 parada e executados até um tempo emulado definido, usando o PID confirmado do
 processo lançado e sua porta exclusiva. `tests/headless/menu.json` abre Sobre,
 volta e compara os pixels com o menu inicial. O recorte remove o relógio.
@@ -150,10 +178,12 @@ Evidências locais: `dist/tests/`, `dist/headless/menu-ws-3/` e
 A ROM local fornecida pelo usuário tem SHA-256
 `211983265868158281d16e5ba54d12f478da5ced47d34af35fb555b9a7ad51ba`, ID
 Daedalus `ea406a09100abe8a-45`. Não é incluída no repositório nem no pacote.
-`tests/headless/lego-menu.json` reproduz o torso ausente no menu.
+`tests/headless/lego-menu.json` alcança o menu usado para comparar o torso.
+`tests/headless/lego-racers.json` captura Joan, Turbo Charger, Scooter e Roboracer.
 `tests/headless/lego-grid.json` passa pela seleção de pista/piloto e captura a
-largada. Os karts aparecem parcialmente: a alegação de desaparecimento completo
-de todos os adversários ainda exige uma cena específica, além desta largada.
+largada. As correções e imagens antes/depois estão em [LEGO-RACERS.md](LEGO-RACERS.md).
+O desaparecimento completo de karts relatado no aparelho ainda exige uma cena
+específica, além desta largada.
 
 ```sh
 dist/headless-venv/bin/python Tools/headless.py --tag lego-menu \
@@ -163,15 +193,20 @@ dist/headless-venv/bin/python Tools/headless.py --tag lego-grid \
 ```
 
 A fila corrigida foi executada também com o jogo até a corrida. Isso elimina
-os defeitos demonstrados da fila; o WAV do jogo ainda não é prova de eliminação
-dos estalos percebidos no aparelho. O torso continua ausente com HLE desligado,
-sem as três otimizações N64 e em uma build sem VFPU. Nenhuma dessas variantes
-recuperou o modelo, portanto nenhuma foi adotada como correção gráfica.
-O log identificou `F3DEX.NoN fifo 2.08` (hash `2484afea`); o caminho até a
-largada não revelou opcode desconhecido. O desenho direto sem combinador
-também manteve a abertura no torso.
-O interpretador N64 não chegou à cena com os mesmos tempos de input; não é uma
-comparação gráfica válida. O interpretador PSP validou o PRX de áudio.
+os defeitos demonstrados da fila; o WAV do jogo ainda não prova a eliminação
+dos estalos percebidos no aparelho. O microcódigo foi identificado como
+`F3DEX.NoN fifo 2.08` (hash `2484afea`), sem opcode desconhecido até a largada.
+
+O torso foi recuperado preservando as posições projetadas dos vértices entre
+mudanças de matriz. A inversão indevida de Y no recorte PSP também foi corrigida,
+recuperando as pernas e a plataforma nas prévias. A build normal, com diagnóstico
+OFF, é exercitada pelos mesmos roteiros. Com ambas as correções, o roteiro normal de pilotos mediu 106,39 s emulados
+em 8,69 s de parede (12,25×) e a largada 123,21 s em 11,74 s (10,50×).
+Isso mede a automação, não FPS N64. Evidências locais:
+`dist/headless/graphics-final-racers/` e `dist/headless/graphics-final-grid/`.
+
+A comparação com o interpretador N64 não alcançou a cena e não permite conclusão
+visual. O interpretador PSP validou os testes MIPS de áudio e projeção.
 
 O plugin Async do Daedalus executa código próprio diretamente no Media Engine.
 Esse caminho não é validado pelo teste Sync nem pelo tom. O boot headless também
@@ -202,7 +237,9 @@ runner. O EBOOT confirma a máscara no log, só para o cartucho LEGO `LG`.
 As flags são: 1 faces CPU; 2 rejeição trivial; 4 clipping CPU; 8 alfa dos
 vértices; 16 teste alfa GE; 32 blend; 64 profundidade; 128 descarte de display
 list; 256 branco sem textura; 512 clipping GE; 1024 faces GE; 2048 fog GE;
-4096 desenho direto sem combinador.
+4096 desenho direto sem combinador; 8192 desliga a correção de projeções;
+16384 restaura a inversão incorreta de Y do recorte PSP. Zero usa as correções.
+As flags podem ser somadas (máximo 32767).
 São intervenções para localizar o defeito, não opções de compatibilidade.
 O log também identifica microcódigo e o primeiro uso de cada comando gráfico.
 

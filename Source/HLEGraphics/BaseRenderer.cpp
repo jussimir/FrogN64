@@ -548,6 +548,23 @@ void BaseRenderer::FlushTris()
 	DAEDALUS_PROFILE( "BaseRenderer::FlushTris" );
 	DAEDALUS_ASSERT( mNumIndices, "Call to FlushTris() with nothing to render" );
 
+#ifdef DAEDALUS_PSP
+    // LEGO Racers skins meshes by reusing vertices across projection changes.
+    // N64 keeps each vertex's clip position; GU would apply the newest matrix
+    // to older XYZ positions. Rebase only those older cache entries before
+    // clipping/conversion, retaining hardware perspective correction.
+    if (g_ROM.GameHacks == LEGO_RACERS
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+        && !(gFrogRenderDiagnostics & 8192)
+#endif
+    ) {
+        for (u32 i = 0; i < mNumIndices; ++i) {
+            const u32 index = mIndexBuffer[i];
+            auto &vertex = mVtxProjected[index];
+            mVertexProjectionCache.Rebase(index, vertex.ProjectedPos, vertex.TransformedPos);
+        }
+    }
+#endif
 	TempVerts temp_verts;
 
 	// If any bit is set here it means we have to clip the trianlges since PSP HW clipping sux!
@@ -987,6 +1004,9 @@ glm::vec3 BaseRenderer::LightPointVert( const glm::vec4 & w ) const
 void BaseRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 {
 	UpdateWorldProject();
+#ifdef DAEDALUS_PSP
+    if (g_ROM.GameHacks == LEGO_RACERS) mVertexProjectionCache.Loaded(v0, n);
+#endif
 	alignas(DATA_ALIGN)  const glm::mat4 & mat_world_project = mWorldProject;
 	alignas(DATA_ALIGN) const glm::mat4 & mat_world = mModelViewStack[mModelViewTop];
 
@@ -1553,6 +1573,9 @@ inline void BaseRenderer::SetVtxXY( u32 vert, f32 x, f32 y )
 //*****************************************************************************
 void BaseRenderer::ResetMatrices(u32 size)
 {
+#ifdef DAEDALUS_PSP
+    if (g_ROM.GameHacks == LEGO_RACERS) mVertexProjectionCache.Reset();
+#endif
 	//Tigger's Honey Hunt and SSV does this...
 	if(size == 0 || size > MATRIX_STACK_SIZE)
 		size = MATRIX_STACK_SIZE;
@@ -1892,13 +1915,16 @@ void BaseRenderer::SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 )
 	s32 w = std::max<s32>( r - l, 0 );
 	s32 h = std::max<s32>( b - t, 0 );
 
-	s32 y = static_cast<s32>(mScreenHeight) - (t + h);
-
 #if defined(DAEDALUS_PSP)
+	// PSP GU uses a top-left origin; only OpenGL needs the Y inversion.
+	s32 y = t;
+#ifdef FROGN64_RENDER_DIAGNOSTICS
+    if (gFrogRenderDiagnostics & 16384) y = static_cast<s32>(mScreenHeight) - (t + h);
+#endif
 	sceGuScissor(l, y, w, h);
 #elif defined(DAEDALUS_GL) || defined(DAEDALUS_CTR) || defined(DAEDALUS_GLES) 
 	// NB: OpenGL is x,y,w,h. Errors if width or height is negative, so clamp this.
-
+	s32 y = static_cast<s32>(mScreenHeight) - (t + h);
 	glScissor( l, y, w, h );
 
 	#ifdef DAEDALUS_DEBUG_CONSOLE
@@ -1938,6 +1964,9 @@ void BaseRenderer::SetProjection(const u32 address, bool bReplace)
 
 	mWorldProjectValid = false;
 	sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &mProjectionMat) );
+#ifdef DAEDALUS_PSP
+    if (g_ROM.GameHacks == LEGO_RACERS) mVertexProjectionCache.SetProjection(mProjectionMat);
+#endif
 
 #ifdef DAEDALUS_ENABLE_PROFILING
 	DL_PF(
@@ -2052,6 +2081,9 @@ inline void BaseRenderer::UpdateWorldProject()
 		{
 			mReloadProj = false;
 			sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &mProjectionMat) );
+#ifdef DAEDALUS_PSP
+            if (g_ROM.GameHacks == LEGO_RACERS) mVertexProjectionCache.SetProjection(mProjectionMat);
+#endif
 		}
 		mWorldProject = mProjectionMat * mModelViewStack[mModelViewTop];
 	}
@@ -2072,6 +2104,9 @@ inline void BaseRenderer::UpdateWorldProject()
 			mWorldProject[3][0] *= HD_SCALE;  // Column 0, Row 3
 		}
 		sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &mWorldProject ) );
+#ifdef DAEDALUS_PSP
+        if (g_ROM.GameHacks == LEGO_RACERS) mVertexProjectionCache.SetProjection(mWorldProject);
+#endif
 		mModelViewStack[mModelViewTop] = glm::mat4(1.0f);;
 	}
 }

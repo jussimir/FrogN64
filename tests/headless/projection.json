@@ -1,0 +1,4 @@
+[
+  {"action": "wait", "seconds": 1},
+  {"action": "expect_log", "text": "FROGN64_PROJECTION_TESTS_PASS"}
+]

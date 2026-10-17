@@ -1,4 +1,4 @@
-name: Host audio tests
+name: Host regression tests
 
 on:
   push:
@@ -29,4 +29,24 @@ jobs:
         with:
           name: host-audio-tests-${{ github.sha }}
           path: build-tests/audio-results.xml
+          if-no-files-found: ignore
+
+  graphics:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GLM headers
+        run: sudo apt-get update && sudo apt-get install -y libglm-dev
+      - name: Configure with ASan and UBSan
+        run: cmake -S tests/graphics -B build-graphics-tests -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - name: Build
+        run: cmake --build build-graphics-tests --parallel 2
+      - name: Test cached vertex projections
+        run: ctest --test-dir build-graphics-tests --output-on-failure --output-junit projection-results.xml
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-projection-tests-${{ github.sha }}
+          path: build-graphics-tests/projection-results.xml
           if-no-files-found: ignore

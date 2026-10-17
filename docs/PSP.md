@@ -13,7 +13,10 @@ Um fork é uma cópia do repositório na sua conta, com histórico e ligação c
 original. Alterações e pushes neste fork não alteram o projeto original.
 
 O FrogN64 usa o núcleo de emulação do DaedalusX64, com correções na fila de
-áudio verificadas em testes sintéticos. O [ambiente headless](HEADLESS.md)
+áudio verificadas em testes sintéticos e correções no renderizador PSP para
+projeções de LEGO Racers e recorte vertical. As [comparações](LEGO-RACERS.md)
+foram feitas no PPSSPP, ainda sem confirmação desta build no aparelho.
+O [ambiente headless](HEADLESS.md)
 permite regressões locais antes do teste físico; não promete ganho de FPS.
 
 O empacotamento define explicitamente `MEMSIZE=1` para solicitar RAM ampliada

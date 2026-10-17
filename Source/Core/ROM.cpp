@@ -362,7 +362,7 @@ void SpecificGameHacks( const ROMHeader & id )
     if (cart_val == 0x4c47) {
         std::ifstream flags("frogn64-render-debug.txt");
         u32 value = 0;
-        if (flags >> value) gFrogRenderDiagnostics = value & 8191;
+        if (flags >> value) gFrogRenderDiagnostics = value & 32767;
         printf("Frog render diagnostics: %lu\n", static_cast<unsigned long>(gFrogRenderDiagnostics));
     }
 #endif
@@ -382,6 +382,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x424C: g_ROM.GameHacks = BUCK_BUMBLE;			break;
 	case 0x4144: g_ROM.GameHacks = WORMS_ARMAGEDDON;	break;
 	case 0x5733: g_ROM.GameHacks = WCW_NITRO;			break;
+	case 0x4c47: g_ROM.GameHacks = LEGO_RACERS;			break;
 
 	case 0x4A46:	// Jet Force Gemini
 	case 0x4756:	// Glover

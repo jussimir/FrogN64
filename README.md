@@ -12,6 +12,8 @@ A interface PSP tem o fundo verde e seleção creme do FrogGBA, menu vertical,
 navegador de ROMs em duas colunas, jogos recentes, relógio/bateria e menu de
 pausa. As opções de emulação, controles, cheats e savestates usam o código do
 DaedalusX64. A fila de áudio recebeu correções cobertas por testes sintéticos.
+O renderizador PSP corrige torsos de LEGO Racers e o recorte vertical das prévias;
+veja as [comparações gráficas](docs/LEGO-RACERS.md).
 Não há ganho de FPS medido.
 
 ![Menu FrogN64 no PSP real](docs/images/frogn64-menu.png)

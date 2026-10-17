@@ -146,7 +146,7 @@ def main():
     ap.add_argument('--moltenvk', type=Path, default=Path('/Applications/PPSSPPSDL.app/Contents/Frameworks/libMoltenVK.dylib'))
     ap.add_argument('--package', type=Path, default=ROOT / 'dist/package/PSP/GAME/FrogN64')
     ap.add_argument('--rom', type=Path)
-    ap.add_argument('--render-debug', type=int, choices=range(8192), metavar='0..8191', help='máscara da build experimental de renderização LEGO')
+    ap.add_argument('--render-debug', type=int, choices=range(32768), metavar='0..32767', help='máscara da build experimental de renderização LEGO')
     ap.add_argument('--audio', choices=['disabled', 'sync'], default='sync', help='ME/Async exige validação no PSP real')
     ap.add_argument('--no-hle', action='store_true')
     ap.add_argument('--n64-cpu', choices=['dynarec', 'interpreter'], default='dynarec')
@@ -186,6 +186,8 @@ def main():
         elif step['action'] == 'analog':
             if not (-1 <= step['x'] <= 1 and -1 <= step['y'] <= 1): raise ValueError('Analógico fora de -1..1.')
             virtual_time += step.get('seconds', 0.12) + step.get('settle', 0.3)
+        elif step['action'] == 'expect_log':
+            if not step.get('text'): raise ValueError('expect_log precisa de text.')
         elif step['action'] == 'capture':
             if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', step['name']): raise ValueError('Nome de captura inválido.')
         elif step['action'] == 'compare':
@@ -261,6 +263,9 @@ def main():
                 if step['action'] == 'wait': debugger.run(step['seconds'])
                 elif step['action'] == 'press': debugger.press(step['button'], step.get('seconds', 0.08), step.get('settle', 0.12))
                 elif step['action'] == 'analog': debugger.analog(step['x'], step['y'], step.get('seconds', 0.12), step.get('settle', 0.3))
+                elif step['action'] == 'expect_log':
+                    if step['text'] not in (folder / 'process.log').read_text(errors='replace'):
+                        raise RuntimeError('Marcador esperado ausente: ' + step['text'])
                 elif step['action'] == 'compare':
                     from compare_frames import compare
                     metrics=compare(folder / (step['left'] + '.png'), folder / (step['right'] + '.png'), step.get('crop'))

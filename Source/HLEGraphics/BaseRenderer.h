@@ -26,6 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Graphics/ColourValue.h"
 #include "Interface/Preferences.h"
 #include <array>
+#ifdef DAEDALUS_PSP
+#include "HLEGraphics/VertexProjectionCache.h"
+#endif
 
 #ifdef DAEDALUS_PSP
 #include <pspgu.h>
@@ -333,7 +336,13 @@ public:
 	inline void			SetVtxTextureCoord( u32 vert, s16 tu, s16 tv ) { mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f); mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f); }
 	inline void			SetVtxXY( u32 vert, float x, float y );
 	void				SetVtxZ( u32 vert, float z );
-	inline void			CopyVtx( u32 vert_src, u32 vert_dst ) { mVtxProjected[vert_dst] = mVtxProjected[vert_src]; }
+	inline void			CopyVtx( u32 vert_src, u32 vert_dst )
+    {
+        mVtxProjected[vert_dst] = mVtxProjected[vert_src];
+#ifdef DAEDALUS_PSP
+        mVertexProjectionCache.Copy(vert_src, vert_dst);
+#endif
+    }
 
 	// Returns true if triangle visible, false otherwise
 	bool				AddTri(u32 v0, u32 v1, u32 v2);
@@ -505,6 +514,9 @@ protected:
 
 	// Processed vertices waiting for output...
 	// std::array<DaedalusVtx4, kMaxN64Vertices> mVtxProjected;
+#ifdef DAEDALUS_PSP
+    VertexProjectionCache<kMaxN64Vertices> mVertexProjectionCache;
+#endif
 	DaedalusVtx4		mVtxProjected[kMaxN64Vertices];		// Transformed and projected vertices (suitable for clipping etc)
 	u32					mVtxClipFlagsUnion;					// Bitwise OR of all the vertex flags added to the current batch. If this is 0, we can trivially accept everything without clipping
 

@@ -1,72 +1,82 @@
-# LEGO Racers — primeiro teste no FrogN64
+# LEGO Racers — diagnóstico e correções
 
-## Estado confirmado em 17/10/2026
+## Estado em 17/10/2026
 
-Build da interface: `dc8ddb828dc62b9d7642b2949820a02260756967`.
-ROM no cartão do usuário: LEGO Racers (U) [!], ID `ea406a09100abe8a-45`.
-Teste no PSP via PSPLink, CPU 333 MHz, sem medição de FPS.
+Dois defeitos gráficos herdados do renderizador PSP do Daedalus foram corrigidos
+e reproduzidos em testes automatizados no PPSSPPHeadless. Não vieram da interface
+FrogN64. A confirmação desta build no PSP físico ainda está pendente.
 
-O usuário confirmou navegador, abertura do jogo e pausa. Depois de ativar o
-áudio por ROM, relatou:
+A ROM local fornecida pelo usuário é LEGO Racers (U) [!], ID
+`ea406a09100abe8a-45`, SHA-256
+`211983265868158281d16e5ba54d12f478da5ced47d34af35fb555b9a7ad51ba`.
+Não é distribuída no Git ou no ZIP. O ambiente e os roteiros estão em
+[HEADLESS.md](HEADLESS.md).
 
-- Estalos frequentes, tanto em Synchronous quanto em Asynchronous.
-- Modelos 3D dos karts adversários ausentes.
-- Torsos de personagens LEGO ausentes.
+## Torsos e partes dos modelos
 
-O volume de firmware estava em 30/30, sem mute. Foi ajustado e lido de volta
-como 6/30. Portanto, a ausência inicial de som era compatível com Audio
-Disabled; os estalos continuam sendo um problema de emulação a investigar.
+O N64 preserva a posição projetada de um vértice já carregado, mesmo após mudar
+a matriz de projeção. LEGO Racers usa isso para montar partes articuladas dos
+personagens. O caminho PSP reutilizava XYZ calculados sob uma projeção anterior,
+aplicando depois a matriz mais recente ao lote inteiro. Os triângulos existiam,
+mas eram deslocados ou deformados.
 
-A configuração registrada no teste tinha audio Async, frameskip 0, HLE e
-recompilação dinâmica habilitados, além das otimizações de memória, loop e
-doubles. Ainda não houve comparação controlada com essas otimizações
-individualmente desabilitadas. Não foi capturada a cena dos modelos ausentes.
+`VertexProjectionCache` registra a projeção de cada vértice e reexpressa apenas
+os antigos no espaço da matriz atual, preservando sua posição projetada. A inversa
+é calculada sob demanda uma vez por projeção. Este caminho é habilitado somente
+para LEGO Racers no PSP.
 
-## Diagnóstico inicial (antes dos testes headless)
+Antes:
 
-O núcleo de áudio e gráficos não foi modificado pela adaptação da interface.
+![Torso ausente](images/lego-torso-before.png)
 
-Em `Source/HLEAudio/AudioBuffer.cpp`, o produtor avança o ponteiro antes de
-escrever a amostra; o consumidor começa lendo no ponteiro atual. O produtor
-publica seu ponteiro somente no fim do bloco e espera espaço em um loop sem
-yield. Isso precisa de testes de ordem das amostras, wrap e saturação da fila,
-além de contadores de underrun no PSP. Não foi demonstrado que essa seja a
-causa dos estalos específicos do LEGO Racers.
+Depois:
 
-Em `Source/HLEGraphics/BaseRenderer.cpp`, existe um comentário histórico sobre
-problemas de clipping em LEGO Racers/Rocket Robot. É uma pista para examinar
-as rotinas de recorte e descarte de triângulos, não uma confirmação da causa
-dos karts e torsos ausentes. É necessário comparar a mesma cena antes/depois.
+![Torso recuperado](images/lego-torso-after.png)
 
-## Sessão física encerrada
+A comparação usa o mesmo EBOOT de diagnóstico, alternando apenas a flag que
+desliga a correção. Os testes matemáticos verificam triângulos com projeções
+misturadas, posição e profundidade, W e interpolação para mudanças afins,
+ausência de erro acumulado, cópia/recarga e reset do cache. Passaram no host com
+ASan/UBSan e como código MIPS no JIT e interpretador PSP do PPSSPP.
 
-A sessão física foi encerrada e a trava liberada a pedido do usuário para
-outro projeto. Evidências locais: `dist/psplink/frogn64-ui-v1-20261017/`.
+As capturas também mostram torsos completos na seleção de pilotos e modelos
+dos adversários na largada. Isso não comprova todas as pistas, personagens ou
+o desaparecimento completo de karts relatado no aparelho.
 
-## Avanço sintético, sem acesso ao PSP
+## Pernas cortadas nas prévias
 
-Os testes do host reproduziram a amostra inicial não escrita, a perda da
-última amostra e o bloqueio com um bloco maior que a fila. A correção faz a
-fila publicar os dados antes de esperar espaço e preserva a fase de
-reamostragem entre pacotes. Os testes estão em `tests/audio/` e foram
-executados também como código MIPS no PPSSPPHeadless, com tom WAV sintético.
+Após recuperar os torsos, o usuário identificou outro defeito: os pés sumiam
+antes da borda inferior do quadro azul. `BaseRenderer::SetScissor` invertia Y
+como no OpenGL, embora a GU do PSP use a origem no canto superior esquerdo.
+A correção mantém essa inversão somente no backend OpenGL.
 
-O PRX MIPS passou no JIT e interpretador PSP do PPSSPP; o tom WAV passou na
-análise de amplitude, continuidade e canais. O host passou os seis casos com
-ASan/UBSan e o stress com TSan. Isso confirma esses defeitos da fila corrigidos,
-não a eliminação de todos os estalos do LEGO Racers.
+Antes:
 
-Com a ROM local fornecida pelo usuário, o torso ausente foi reproduzido no menu
-e na seleção de piloto. A automação também alcança a largada e salva uma série
-de quadros dos adversários, alguns com geometria parcial. Ainda não foi isolada
-uma cena de desaparecimento completo de kart. A ROM tem o mesmo ID do teste
-físico; seu hash e os roteiros ficam documentados em [HEADLESS.md](HEADLESS.md).
+![Prévia com pernas cortadas](images/lego-scissor-before.png)
 
-O torso continuou ausente nas comparações sem HLE, sem otimizações de memória,
-loop/doubles e sem VFPU, além dos testes isolados de clipping/alpha/blend/depth.
-Esses experimentos não são correções e ficam fora da build normal. A comparação
-com o interpretador N64 não alcançou a mesma cena; não permite conclusão visual.
+Depois:
 
-Nenhum acesso ao aparelho foi feito nesta etapa. O caminho Sync foi exercitado
-com o EBOOT até a corrida, acima de realtime no Mac; Async/Media Engine e a
-melhora perceptível no áudio ainda precisam da confirmação física posterior.
+![Prévia com pernas e pés completos](images/lego-scissor-after.png)
+
+O quadro agora é preenchido até sua borda inferior, incluindo as pernas e a
+plataforma. A assinatura e a implementação do SDK fixado foram verificadas:
+`sceGuScissor` recebe x, y, largura e altura. Referência primária:
+[PSPSDK sceGuScissor](https://github.com/pspdev/pspsdk/blob/master/src/gu/sceGuScissor.c).
+
+## Áudio e limites
+
+No teste físico anterior, o usuário confirmou navegador, jogo e pausa, depois
+relatou estalos tanto em Sync quanto em Async. A fila herdada tinha perda de
+amostras, primeira amostra não escrita e bloqueio com pacotes maiores que sua
+capacidade. Esses defeitos foram corrigidos e os testes nativos/MIPS com WAV
+sintético passaram. Isso não demonstra a eliminação de todos os estalos do jogo.
+
+Os testes atuais exercitam Audio Sync até a corrida. Async/Media Engine,
+cadência real a 333 MHz e melhora perceptível exigem a fase física posterior.
+A sessão PSPLink foi encerrada a pedido do usuário para outro projeto; nenhum
+acesso ao aparelho foi feito durante esta investigação sintética.
+
+As primeiras tentativas sem HLE, sem otimizações N64, sem VFPU e com clipping,
+blend, alpha ou profundidade desligados não recuperaram o torso. Não foram
+adotadas como correção. O interpretador N64 não alcançou a mesma cena e não
+constitui comparação visual válida; o interpretador PSP validou os testes MIPS.
