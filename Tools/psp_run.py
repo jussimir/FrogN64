@@ -2,7 +2,7 @@
 """Run this fork through the existing PSPLink server and shared hardware lock.
 
 The NFSU2 controller supplies only the shared lock and pspsh executable. Its
-game loader, volume pokes and assets are deliberately not used for Daedalus.
+game loader, volume pokes and assets are deliberately not used for FrogN64.
 """
 import argparse
 import hashlib
@@ -20,7 +20,7 @@ import time
 
 ROOT = Path(__file__).resolve().parent.parent
 STATE = ROOT / 'dist/psplink/session.json'
-OWNER = f'DaedalusX64: {ROOT}'
+OWNER = f'FrogN64: {ROOT}'
 
 
 def shared_controller(path):
@@ -96,6 +96,7 @@ def main():
     ap.add_argument('--host-root', type=Path)
     ap.add_argument('--tag', default=time.strftime('%Y%m%d-%H%M%S'))
     ap.add_argument('--list-path', help='probe/inspect: list one PSP directory')
+    ap.add_argument('--rom-directory', help='start: initial ROM browser folder (no ROMs copied)')
     ap.add_argument('--rom', help='start: load a ROM directly from a PSP path')
     a = ap.parse_args()
     shared = shared_controller(a.shared_root)
@@ -139,12 +140,15 @@ def main():
         launched = False
         try:
             modules = command(shared, 'modlist')
-            if 'UID' not in modules or 'NFSU2 PSP Viewer' in modules or 'DaedalusX64' in modules:
-                raise RuntimeError('PSPLink não está livre para carregar o Daedalus.')
+            if 'UID' not in modules or 'NFSU2 PSP Viewer' in modules or 'DaedalusX64' in modules or 'FrogN64' in modules:
+                raise RuntimeError('PSPLink não está livre para carregar o FrogN64.')
             folder = ROOT / 'dist/psplink' / a.tag
             folder.mkdir(parents=True, exist_ok=False)
             game = folder / 'game'
-            shutil.copytree(ROOT / 'dist/package/PSP/GAME/DaedalusX64', game)
+            shutil.copytree(ROOT / 'dist/package/PSP/GAME/FrogN64', game)
+            if a.rom_directory:
+                quote_path(a.rom_directory)
+                (game / 'frogn64-directory.txt').write_text(a.rom_directory + '\n')
             prx = (ROOT / 'build/Source/daedalus.prx').read_bytes()
             pbp = (game / 'EBOOT.PBP').read_bytes()
             offsets = struct.unpack_from('<8I', pbp, 8)
@@ -223,7 +227,7 @@ def main():
         while time.monotonic() < deadline:
             try:
                 answer = command(shared, 'modlist', folder, timeout=3)
-                if 'UID' in answer and 'DaedalusX64' not in answer:
+                if 'UID' in answer and 'DaedalusX64' not in answer and 'FrogN64' not in answer:
                     command(shared, 'cd host0:/', folder)
                     if 'host0:/' not in command(shared, 'pwd', folder):
                         raise RuntimeError('O diretório do shell não foi restaurado.')

@@ -6,12 +6,12 @@ add_subdirectory(Utility)
 
 # Create and install Plugin files
 
-install(DIRECTORY DESTINATION DaedalusX64/Plugins) 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PRX/MediaEngine/mediaengine.prx DESTINATION DaedalusX64/Plugins)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PRX/DveMgr/dvemgr.prx DESTINATION DaedalusX64/Plugins)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}//PRX/ExceptionHandler/exception.prx DESTINATION DaedalusX64/Plugins)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/../EBOOT.PBP DESTINATION DaedalusX64)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/../daedalus.prx DESTINATION DaedalusX64) # in the CI Build this is deleted
+install(DIRECTORY DESTINATION FrogN64/Plugins)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PRX/MediaEngine/mediaengine.prx DESTINATION FrogN64/Plugins)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PRX/DveMgr/dvemgr.prx DESTINATION FrogN64/Plugins)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}//PRX/ExceptionHandler/exception.prx DESTINATION FrogN64/Plugins)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/../EBOOT.PBP DESTINATION FrogN64)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/../daedalus.prx DESTINATION FrogN64) # in the CI Build this is deleted
 
 list(APPEND daed_libs)
 set(daed_libs ${daed_libs} PARENT_SCOPE)

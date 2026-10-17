@@ -49,7 +49,7 @@ cmake --build build --parallel "$jobs"
 stage="$repo_dir/dist/package"
 rm -rf "$stage"
 cmake --install build --prefix "$stage/PSP/GAME"
-package="$stage/PSP/GAME/DaedalusX64"
+package="$stage/PSP/GAME/FrogN64"
 rm -f "$package/daedalus.prx"
 find "$package" -name .DS_Store -type f -delete
 cp copying.txt "$package/COPYING.txt"
@@ -67,16 +67,16 @@ if [[ -n "$(git -c safe.directory="$repo_dir" status --porcelain)" ]]; then
     tree_state=modified
 fi
 {
-    printf 'Project: https://github.com/jussimir/pessoal-pspn64emulator\n'
+    printf 'Project: https://github.com/jussimir/FrogN64\n'
     printf 'Revision: %s\nWorking tree: %s\n' "$revision" "$tree_state"
     printf 'Built at (UTC): %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     printf 'Reference toolchain image: %s\n' "$image"
     psp-g++ --version | head -n 1
 } > "$package/BUILD-INFO.txt"
 
-archive="DaedalusX64-PSP-${revision:0:8}.zip"
+archive="FrogN64-PSP-${revision:0:8}.zip"
 if [[ "$tree_state" == modified ]]; then
-    archive="DaedalusX64-PSP-${revision:0:8}-modified.zip"
+    archive="FrogN64-PSP-${revision:0:8}-modified.zip"
 fi
 (
     cd "$stage"

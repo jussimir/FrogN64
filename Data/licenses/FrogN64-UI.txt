@@ -1,0 +1,18 @@
+FrogN64 UI adaptation (GPL-2.0-or-later)
+
+Reference: https://github.com/tzubertowski/FrogGBA
+Reference revision: 9d75721fe8e3df23db4148f49e92df2bafe6dd1a
+Reference file: source/src/gui.c
+
+The PSP frontend adapts FrogGBA's green/cream palette, vertical menu,
+two-column file browser, recent-game concept, clock/battery header and help
+strip. FrogGBA UI enhancements are by tzubertowski (Prosty) and contributors.
+Original gui.c notices: Copyright (C) 2006 Exophase; (C) 2007 takka.
+FrogGBA project: Copyright (C) 2024 FrogGBA Project Contributors.
+The upstream license notice is preserved in FrogGBA.txt.
+
+The N64 core remains DaedalusX64, with its original author notices intact.
+No GBA emulation core or FrogGBA bitmap fonts are included in FrogN64.
+The frog mark is newly drawn from rectangles for this project.
+PSP fonts are loaded from the device firmware, as in DaedalusX64.
+See COPYING.txt for the GNU General Public License version 2.

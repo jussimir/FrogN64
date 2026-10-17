@@ -323,9 +323,9 @@ add_definitions(-D_USE_MATH_DEFINES)
 			# MEMSIZE=2 is not treated as expanded memory by PPSSPP 1.20.4.
 			MEMSIZE 1
 			PREVIEW_PATH NULL
-			ICON_PATH ${PROJECT_SOURCE_DIR}/Source/SysPSP/Resources/eboot_icons/icon0.png
-			BACKGROUND_PATH ${PROJECT_SOURCE_DIR}/Source/SysPSP/Resources/eboot_icons/pic1.png
-			TITLE DaedalusX64
+			ICON_PATH ${PROJECT_SOURCE_DIR}/Source/SysPSP/Resources/frogn64/icon0.png
+			BACKGROUND_PATH ${PROJECT_SOURCE_DIR}/Source/SysPSP/Resources/frogn64/pic1.png
+			TITLE FrogN64
 			BUILD_PRX
 			)
 	endif(PSP)
@@ -367,7 +367,12 @@ add_definitions(-D_USE_MATH_DEFINES)
 endif(CTR)
 	
 	## Install and setup basic directories
-	install(DIRECTORY ${PROJECT_BINARY_DIR}/../Data/ DESTINATION DaedalusX64)
-	install(DIRECTORY DESTINATION DaedalusX64/Roms)
-	install(DIRECTORY DESTINATION DaedalusX64/SaveGames)
-	install(DIRECTORY DESTINATION DaedalusX64/SaveStates)
+    if(PSP)
+        set(PACKAGE_DIRECTORY FrogN64)
+    else()
+        set(PACKAGE_DIRECTORY DaedalusX64)
+    endif()
+	install(DIRECTORY ${PROJECT_BINARY_DIR}/../Data/ DESTINATION ${PACKAGE_DIRECTORY})
+	install(DIRECTORY DESTINATION ${PACKAGE_DIRECTORY}/Roms)
+	install(DIRECTORY DESTINATION ${PACKAGE_DIRECTORY}/SaveGames)
+	install(DIRECTORY DESTINATION ${PACKAGE_DIRECTORY}/SaveStates)

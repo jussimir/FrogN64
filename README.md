@@ -1,25 +1,35 @@
-# DaedalusX64
+# FrogN64
 
-## Fork pessoal para PSP
+Emulador de Nintendo 64 para PSP, baseado no núcleo atual do
+[DaedalusX64](https://github.com/DaedalusX64/daedalus), com interface adaptada do
+[FrogGBA](https://github.com/tzubertowski/FrogGBA).
 
-Este fork de [DaedalusX64/daedalus](https://github.com/DaedalusX64/daedalus)
-é mantido em [jussimir/pessoal-pspn64emulator](https://github.com/jussimir/pessoal-pspn64emulator).
-A branch de trabalho é `psp-development`, baseada no commit upstream
-`580c0c409358db332149fc2903c610449434f8fc` de **10/10/2026**.
+O fork é mantido em [jussimir/FrogN64](https://github.com/jussimir/FrogN64), na
+branch `psp-development`. A base inicial do núcleo é o commit upstream
+`580c0c409358db332149fc2903c610449434f8fc`, de **10/10/2026**.
 
-Para gerar o pacote PSP com Docker:
+A interface PSP tem o fundo verde e seleção creme do FrogGBA, menu vertical,
+navegador de ROMs em duas colunas, jogos recentes, relógio/bateria e menu de
+pausa. As opções de emulação, controles, cheats e savestates usam o código do
+DaedalusX64. Esta etapa não altera o desempenho do núcleo.
+
+![Menu FrogN64 no PSP real](docs/images/frogn64-menu.png)
 
 ```sh
 ./scripts/psp.sh
 ```
 
-O ZIP será criado em `dist/`. Consulte [o guia de desenvolvimento PSP](docs/PSP.md)
-para instalação, testes e sincronização com o original. Esta base ainda não
-contém otimizações próprias de emulação.
+O ZIP `dist/FrogN64-PSP-<commit>.zip` contém `PSP/GAME/FrogN64/`. Copie essa pasta
+para o cartão e coloque suas ROMs em `FrogN64/Roms/`, ou navegue até a pasta em
+que elas já estão. A instalação pode coexistir com DaedalusX64 e FrogGBA.
+O pacote solicita RAM ampliada nos modelos compatíveis (`MEMSIZE=1`).
 
-O pacote solicita RAM ampliada nos modelos PSP compatíveis (`MEMSIZE=1`),
-evitando a falha de alocação observada no teste de inicialização no PPSSPP.
- 
+Veja o [guia PSP](docs/PSP.md), o [guia da interface](docs/FROGN64-UI.md) e o
+[guia PSPLink](docs/PSPLINK.md). Software livre, GPL v2 ou posterior; créditos
+originais preservados, com [atribuição do FrogGBA](Data/licenses/FrogN64-UI.txt).
+
+## Documentação original do núcleo DaedalusX64
+
 DaedalusX64 is a Nintendo 64 emulator for PSP, 3DS, Vita, Linux, macOS and Windows
  
 ## Features:

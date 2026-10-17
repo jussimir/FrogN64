@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include "Base/Types.h"
+#ifdef DAEDALUS_PSP
+#include "FrogMenuScreen.h"
+#endif
 
 
 #include <stdio.h>
@@ -110,7 +113,11 @@ CPauseScreen::~CPauseScreen() {}
 
 std::unique_ptr<CPauseScreen>	CPauseScreen::Create( CUIContext * p_context )
 {
+	#ifdef DAEDALUS_PSP
+	return CreateFrogPauseMenu(p_context);
+#else
 	return std::make_unique<IPauseScreen>( p_context );
+#endif
 }
 
 

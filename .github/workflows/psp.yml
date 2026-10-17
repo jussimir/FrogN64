@@ -23,6 +23,6 @@ jobs:
       - name: Upload PSP ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: DaedalusX64-PSP-${{ github.sha }}
-          path: dist/DaedalusX64-PSP-*.zip
+          name: FrogN64-PSP-${{ github.sha }}
+          path: dist/FrogN64-PSP-*.zip
           if-no-files-found: error

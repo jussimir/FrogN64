@@ -8,10 +8,17 @@
 
 namespace DrawTextUtilities
 {
-	const c32 TextWhite = c32(255, 255, 255);
+	#ifdef DAEDALUS_PSP
+    const c32 TextWhite = c32(144, 224, 176);
+    const c32 TextWhiteDisabled = c32(96, 160, 128);
+    const c32 TextBlue = c32(160, 224, 176);
+    const c32 TextBlueDisabled = c32(96, 160, 128);
+#else
+    const c32 TextWhite = c32(255, 255, 255);
 	const c32 TextWhiteDisabled = c32(208, 208, 208);
 	const c32 TextBlue = c32(80, 80, 208);
 	const c32 TextBlueDisabled = c32(80, 80, 178);
+#endif
 	const c32 TextRed = c32(255, 0, 0);
 	const c32 TextRedDisabled = c32(208, 208, 208);
 	const c32 TextGreen = c32(0, 255, 0);

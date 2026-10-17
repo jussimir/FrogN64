@@ -4,7 +4,7 @@ O controlador `Tools/psp_run.py` usa o servidor `usbhostfs_pc` já aberto neste
 Mac e a trava compartilhada com o projeto `pessoal-nfsu2-psp`. Por padrão,
 reutiliza o SDK e o controlador de trava desse checkout irmão. Outro local
 pode ser indicado por `--shared-root`. Não usa o loader nem os pokes de memória
-específicos do NFSU2 no Daedalus.
+específicos do NFSU2 no FrogN64.
 
 ```sh
 python3 Tools/psp_run.py inspect
@@ -50,3 +50,7 @@ Falha depois da tentativa de carregar o PRX mantém a trava até uma parada
 explícita. Não use comandos de outra sessão enquanto ela possuir o aparelho.
 Os logs de início são capturados por oito segundos; `probe` e `shot` são
 diagnósticos pontuais e não constituem benchmark de FPS.
+
+Para testar o navegador do FrogN64 com uma pasta de ROMs existente, acrescente
+`--rom-directory 'ms0:/caminho/das/Roms'` ao `start`, sem `--rom`. Essa opção
+escreve somente a preferência da cópia de teste; não copia nem altera ROMs.

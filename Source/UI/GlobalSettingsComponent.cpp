@@ -323,7 +323,9 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	mElements.Add(std::make_unique<CBoolSetting>( &gGlobalPreferences.CustomBlendModes, "Use Custom Blend Modes",	"Debugging tool to disable custom blendmodes.", "Yes", "No" ) );
 #endif
 	mElements.Add(std::make_unique<CBoolSetting>( &gGlobalPreferences.BatteryWarning, "Low Battery Warning",	"Whether to allow Daedalus to notify when the battery is low.", "Yes", "No" ) );
+#ifndef DAEDALUS_PSP
 	mElements.Add(std::make_unique<CColorSetting>( "GUI Color", "Change GUI Color" ) );
+#endif
 	mElements.Add(std::make_unique<CLanguage>( "Language", "Press X to load language" ) );
 	mElements.Add(std::make_unique<CResetSetting>( mpContext, "Reset Settings", "Will guide you to reset preferences to default, and hle cache files. Note : emulator will exit if resetting settings" ) );
 

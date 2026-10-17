@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include "Base/Types.h"
+#include "UI/FrogTheme.h"
 
 #include <psptypes.h>
 #include <pspkernel.h>
@@ -99,8 +100,8 @@ class IUIContext : public CUIContext
 		virtual u32					GetScreenWidth() const				{ return BACKGROUND_WIDTH; }
 		virtual u32					GetScreenHeight() const				{ return BACKGROUND_HEIGHT; }
 
-		virtual c32					GetDefaultTextColour() const		{ return DrawTextUtilities::TextWhite; }
-		virtual c32					GetSelectedTextColour() const		{ return mColourPulser.GetCurrentColour(); }
+		virtual c32					GetDefaultTextColour() const		{ return FrogTheme::Text; }
+		virtual c32					GetSelectedTextColour() const		{ return FrogTheme::Selected; }
 
 		virtual void				Update( float elapsed_time );
 
@@ -384,27 +385,39 @@ namespace
 
 
 
-s32		IUIContext::DrawTextArea( s32 left, s32 top, u32 width [[maybe_unused]], u32 height, const std::string& text, c32 colour, EVerticalAlign vertical_align )
+s32 IUIContext::DrawTextArea(s32 left, s32 top, u32 width, u32 height,
+                              const std::string &text, c32 colour, EVerticalAlign align)
 {
-	const u32			font_height( CDrawText::GetFontHeight( mCurrentFont ) );
-	u32					length = text.length();
-	std::vector<u32>	lengths;
-	bool				match = false;
-	// DrawTextUtilities::WrapText( mCurrentFont, width, Translate_Strings( text, length ), length, lengths, match );
-
-	s32 x =  left;
-	s32 y = VerticalAlign( vertical_align, top, height, lengths.size() * font_height );
-
-	// Our built-in auto-linebreaking can't handle unicodes.
-	// Fall back to use intrafont's manual linebreaking feature
-	if( match )
-	{
-		y += font_height;
-		DrawTextScale( x, y, 0.8f, text, length, colour );
-		y += 2;
-		return y - top;
-	}
-	return y - top;
+    // Wrap help text at word boundaries, keeping UTF-8 codepoints intact.
+    const u32 lineHeight = CDrawText::GetFontHeight(mCurrentFont) + 2;
+    if (!width || height < lineHeight || text.empty()) return 0;
+    const size_t maxLines = height / lineHeight;
+    std::vector<std::string> lines;
+    size_t begin = 0;
+    while (begin < text.size() && lines.size() < maxLines)
+    {
+        size_t end = begin, lastSpace = std::string::npos;
+        while (end < text.size() && text[end] != '\n')
+        {
+            size_t next = end + 1;
+            while (next < text.size() && (static_cast<unsigned char>(text[next]) & 0xc0) == 0x80) ++next;
+            if (CDrawText::GetTextWidth(mCurrentFont, text.substr(begin, next - begin).c_str()) * 0.8f > width && end > begin) break;
+            if (text[end] == ' ') lastSpace = end;
+            end = next;
+        }
+        if (end < text.size() && text[end] != '\n' && lastSpace != std::string::npos && lastSpace > begin) end = lastSpace;
+        lines.push_back(text.substr(begin, end - begin));
+        begin = end;
+        while (begin < text.size() && text[begin] == ' ') ++begin;
+        if (begin < text.size() && text[begin] == '\n') ++begin;
+    }
+    s32 y = VerticalAlign(align, top, height, lines.size() * lineHeight);
+    for (const auto &line : lines)
+    {
+        y += lineHeight;
+        DrawTextScale(left, y, 0.8f, line, line.size(), colour);
+    }
+    return lines.size() * lineHeight;
 }
 
 

@@ -76,7 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL2/SDL.h>
 #else
 
-PSP_MODULE_INFO( DaedalusX64 1.1.9a, 0, 1, 1 );
+PSP_MODULE_INFO( FrogN64 0.1, 0, 1, 1 );
 PSP_MAIN_THREAD_ATTR( PSP_THREAD_ATTR_USER | PSP_THREAD_ATTR_VFPU );
 #endif
 

@@ -1,8 +1,8 @@
-# Desenvolvimento para PSP
+# Desenvolvimento FrogN64 para PSP
 
 ## Base do projeto
 
-- Fork: https://github.com/jussimir/pessoal-pspn64emulator
+- Fork: https://github.com/jussimir/FrogN64
 - Original (`upstream`): https://github.com/DaedalusX64/daedalus
 - Base inicial: `580c0c409358db332149fc2903c610449434f8fc`, de 10/10/2026.
 - Build oficial dessa base: https://github.com/DaedalusX64/daedalus/actions/runs/38029124147
@@ -12,7 +12,7 @@
 Um fork é uma cópia do repositório na sua conta, com histórico e ligação com o
 original. Alterações e pushes neste fork não alteram o projeto original.
 
-Esta primeira base mantém o núcleo de emulação original. Ela prepara compilação,
+O FrogN64 mantém o núcleo de emulação original. Ela prepara compilação,
 empacotamento e testes para futuras melhorias; não promete ganho de FPS.
 
 O empacotamento define explicitamente `MEMSIZE=1` para solicitar RAM ampliada
@@ -39,7 +39,7 @@ Com PSPSDK nativo e suas bibliotecas já instalados:
 ./scripts/psp.sh --native
 ```
 
-O pacote sai em `dist/DaedalusX64-PSP-<commit>.zip`. Compilações com alterações
+O pacote sai em `dist/FrogN64-PSP-<commit>.zip`. Compilações com alterações
 locais recebem o sufixo `-modified`. O arquivo `BUILD-INFO.txt` registra commit,
 estado da árvore, data UTC e toolchain. O empacotamento copia os recursos do
 projeto para uma pasta limpa, sem incluir ROMs ou saves locais.
@@ -51,11 +51,11 @@ disponível apenas para execução manual.
 ## Instalar e testar
 
 1. Faça backup da instalação anterior e dos seus saves.
-2. Extraia o ZIP na raiz do Memory Stick, gerando `PSP/GAME/DaedalusX64/`.
-3. Coloque suas ROMs em `PSP/GAME/DaedalusX64/Roms/`.
-4. Inicie o DaedalusX64 pelo menu de jogos do PSP com suporte a homebrew.
+2. Extraia o ZIP na raiz do Memory Stick, gerando `PSP/GAME/FrogN64/`.
+3. Coloque suas ROMs em `PSP/GAME/FrogN64/Roms/`.
+4. Inicie o FrogN64 pelo menu de jogos do PSP com suporte a homebrew.
 
-Para conferir a inicialização no PPSSPP, instale a pasta `DaedalusX64` dentro de
+Para conferir a inicialização no PPSSPP, instale a pasta `FrogN64` dentro de
 `PSP/GAME/` do Memory Stick virtual e abra seu `EBOOT.PBP`. Isso mantém os
 caminhos de configurações e saves em `ms0:`. No PPSSPP SDL deste Mac, a pasta é
 `~/.config/ppsspp/PSP/GAME/`. Desempenho, Media Engine e compatibilidade precisam

@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "UIAlignment.h"
 #include "Interface/Preferences.h"
 #include <cstring>
+#ifdef DAEDALUS_PSP
+#include "FrogTheme.h"
+#endif
 
 class CNativeTexture;
 
@@ -59,6 +62,9 @@ class CUIContext
 		// ToDo : Move this out of here..
 		void ClearBackground()
 		{
+			#ifdef DAEDALUS_PSP
+            ClearBackground(FrogTheme::Background);
+#else
 			c32		BACKGROUND_COLOUR = c32::Black;	// default color
 
 			switch( gGlobalPreferences.GuiColor )
@@ -74,6 +80,7 @@ class CUIContext
 			case GREY:		BACKGROUND_COLOUR = c32::Grey;		break;
 			}
 			ClearBackground( BACKGROUND_COLOUR );
+#endif
 		}
 
 

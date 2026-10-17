@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include "Base/Types.h"
+#ifdef DAEDALUS_PSP
+#include "FrogMenuScreen.h"
+#endif
 
 
 #include <string>
@@ -121,7 +124,11 @@ CMainMenuScreen::~CMainMenuScreen() {}
 
 std::unique_ptr<CMainMenuScreen>	CMainMenuScreen::Create( CUIContext * p_context )
 {
+	#ifdef DAEDALUS_PSP
+	return CreateFrogMainMenu(p_context);
+#else
 	return std::make_unique<IMainMenuScreen>( p_context );
+#endif
 }
 
 
@@ -371,7 +378,11 @@ void DisplayRomsAndChoose(bool show_splash)
 	{
 		p_context->ClearBackground(c32::Red);
 
-		if( show_splash )
+		if( show_splash
+#ifdef DAEDALUS_PSP
+            && false // FrogN64 opens directly into its frontend.
+#endif
+        )
 		{
 			auto p_splash = CSplashScreen::Create( p_context );
 			p_splash->Run();
