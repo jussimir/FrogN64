@@ -31,8 +31,14 @@ def shared_controller(path):
 
 
 def command(shared, text, folder=None, timeout=12):
-    result = subprocess.run([str(shared.p.BIN / 'pspsh'), '-n', '-e', text],
-                            capture_output=True, timeout=timeout)
+    try:
+        result = subprocess.run([str(shared.p.BIN / 'pspsh'), '-n', '-e', text],
+                                capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if folder:
+            with (folder / 'commands.log').open('a') as log:
+                log.write(f'\n[{time.strftime("%Y-%m-%dT%H:%M:%S%z")}] {text}\nTIMEOUT: execução não confirmada.\n')
+        raise
     answer = (result.stdout + result.stderr).decode('utf-8', errors='replace')
     if folder:
         with (folder / 'commands.log').open('a') as log:
@@ -91,11 +97,12 @@ def screenshot(shared, state, folder):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('action', choices=['inspect', 'start', 'status', 'probe', 'shot', 'stop', 'recover-directory'])
+    ap.add_argument('action', choices=['inspect', 'start', 'status', 'probe', 'shot', 'volume', 'stop', 'recover-directory'])
     ap.add_argument('--shared-root', type=Path, default=ROOT.parent / 'pessoal-nfsu2-psp')
     ap.add_argument('--host-root', type=Path)
     ap.add_argument('--tag', default=time.strftime('%Y%m%d-%H%M%S'))
     ap.add_argument('--list-path', help='probe/inspect: list one PSP directory')
+    ap.add_argument('--level', type=int, choices=range(31), metavar='0..30', help='volume: firmware volume level')
     ap.add_argument('--rom-directory', help='start: initial ROM browser folder (no ROMs copied)')
     ap.add_argument('--rom', help='start: load a ROM directly from a PSP path')
     a = ap.parse_args()
@@ -211,6 +218,36 @@ def main():
     state, folder = read_state(shared)
     if a.action == 'shot':
         screenshot(shared, state, folder)
+    elif a.action == 'volume':
+        if a.level is None:
+            raise ValueError('Informe --level 0..30.')
+        helper = ROOT / 'Tools/psp-volume/volume.prx'
+        if not helper.is_file():
+            raise RuntimeError('Compile Tools/psp-volume antes de usar volume.')
+        target = folder / 'game/psplink-volume.prx'
+        shutil.copy2(helper, target)
+        report_name = f'volume-{time.time_ns()}.txt'
+        report = folder / 'game' / report_name
+        result = command(shared, state['remote'] + '/psplink-volume.prx' +
+                         f' {a.level} ' + quote_path(state['remote'] + '/' + report_name), folder)
+        uid = re.search(r'UID: (0x[0-9A-Fa-f]+) Name: FrogN64Volume', result)
+        deadline = time.monotonic() + 5
+        while uid and time.monotonic() < deadline:
+            if report.is_file() and 'mute_after=' in report.read_text():
+                break
+            time.sleep(0.1)
+        if not uid or not report.is_file() or 'mute_after=' not in report.read_text():
+            raise RuntimeError('O utilitário de volume não produziu confirmação; confira commands.log.')
+        values = dict(line.split('=', 1) for line in report.read_text().splitlines())
+        print(report.read_text())
+        stopped = command(shared, 'modstop ' + uid.group(1), folder)
+        if 'Status 0x00000000' not in stopped:
+            raise RuntimeError('O utilitário não confirmou parada; não será descarregado.')
+        command(shared, 'modunld ' + uid.group(1), folder)
+        if (int(values['set_result']) < 0 or int(values['unmute_result']) < 0 or
+                int(values['after']) != a.level or int(values['mute_after']) != 0):
+            raise RuntimeError('O firmware não confirmou o volume solicitado.')
+        print(f'Volume do sistema confirmado: {a.level}/30, mute desativado.')
     elif a.action == 'probe':
         for text in ['modlist', 'meminfo', 'exprint', 'power', 'thlist']:
             command(shared, text, folder)
@@ -220,7 +257,7 @@ def main():
         try:
             command(shared, 'reset', folder, timeout=6)
         except (subprocess.TimeoutExpired, RuntimeError):
-            print('Reset enviado; aguardando reconexão sem reenviar reset.')
+            print('Tentativa de reset sem resposta; aguardando reconexão sem reenviar reset.')
         # Wait for the USB reconnect once; never resend reset during recovery.
         time.sleep(5)
         deadline = time.monotonic() + 90
@@ -244,4 +281,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except subprocess.TimeoutExpired:
+        raise SystemExit('PSPLink sem resposta. Deixe o jogo pausado antes de consultar ou ajustar o volume; um timeout não confirma cancelamento.')

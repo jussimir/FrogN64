@@ -29,3 +29,5 @@ Source/tmp
 /vcpkg_installed/
 /CMakeSettings.json
 .vscode/
+
+__pycache__/

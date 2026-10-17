@@ -59,7 +59,11 @@ podem ser regenerados no macOS com `swift Tools/branding/render.swift`.
   [frogn64-menu.png](images/frogn64-menu.png).
 - Uma abertura pela interface alcançou a introdução LEGO no aparelho.
 - O usuário confirmou navegador, abertura do jogo e pausa: “a princípio tudo
-  funcionando”. Áudio e savestates ainda não têm confirmação de uso.
+  funcionando”. O áudio saiu após habilitação por ROM; o usuário relatou estalos em Sync e
+  Async e partes de modelos ausentes em LEGO Racers. Savestates ainda não
+  têm confirmação de uso.
 
 As evidências locais estão em `dist/psplink/frogn64-ui-v1-20261017/`.
 O teste usa uma cópia fixa do PRX e registra seu SHA-256 em `session.json`.
+
+Os defeitos do jogo e as pistas para investigação estão em [LEGO-RACERS.md](LEGO-RACERS.md).

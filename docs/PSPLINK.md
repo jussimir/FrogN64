@@ -54,3 +54,27 @@ diagnósticos pontuais e não constituem benchmark de FPS.
 Para testar o navegador do FrogN64 com uma pasta de ROMs existente, acrescente
 `--rom-directory 'ms0:/caminho/das/Roms'` ao `start`, sem `--rom`. Essa opção
 escreve somente a preferência da cópia de teste; não copia nem altera ROMs.
+
+## Volume sem usar os botões físicos
+
+O build também compila `Tools/psp-volume/volume.prx`, um utilitário separado do
+EBOOT. Com uma sessão deste projeto ativa, **deixe o FrogN64 na pausa primeiro**:
+
+```sh
+python3 Tools/psp_run.py volume --level 6
+```
+
+Os níveis vão de 0 a 30. O utilitário usa `sceImposeGetParam/SetParam` do
+firmware, lê o valor de volta, desativa mute e grava um relatório na pasta da
+sessão. O controlador só informa sucesso após conferir o relatório, e para e
+descarrega o utilitário. Não altera a memória do jogo.
+
+No teste de 17/10/2026, o firmware confirmou volume anterior 30, novo 6 e mute
+0. O usuário ouviu o jogo após ativar Audio nas configurações por ROM, mas
+relatou estalos em LEGO Racers tanto em Sync quanto em Async.
+
+Durante a emulação de LEGO Racers, o shell ficou sem responder e retomou na
+pausa; a primeira tentativa de volume só confirmou depois disso. Um timeout
+não prova cancelamento. Entre na pausa e confira o resultado antes de repetir
+um comando de carregamento. O PRX confirmado tem SHA-256
+`364c3b535b772ee708c7ce4c8c70c1d4f958042357de0485b2be593041319532`.

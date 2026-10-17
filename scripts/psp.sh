@@ -42,6 +42,8 @@ for plugin in DveMgr ExceptionHandler MediaEngine; do
     make -j "$jobs" -C "Source/SysPSP/PRX/$plugin"
 done
 
+make -j "$jobs" -C Tools/psp-volume
+
 psp-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel "$jobs"
 
