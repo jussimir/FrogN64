@@ -87,8 +87,11 @@ com RAM ampliada; não comprova compatibilidade com PSP-1000.
 - `exprint`: **No exception occurred** após iniciar o jogo.
 - Plugin `mediaengine.prx` carregou; áudio permaneceu desabilitado pelo padrão
   do upstream. Isso não comprova reprodução de áudio.
-- Gameplay, resposta aos controles, cadência/FPS e persistência de saves ainda
-  precisam de validação. Nenhum ganho de desempenho foi medido.
+- Jussimir confirmou no aparelho: **controles e imagem funcionando**, após o
+  pedido para pressionar Start e entrar no jogo. É uma validação manual do
+  usuário, adicional aos screenshots e logs.
+- Cadência/FPS, áudio e persistência de saves ainda precisam de validação.
+  Nenhum ganho de desempenho foi medido.
 
 Evidências locais em `dist/psplink/266621c-menu-20261017/` e
 `dist/psplink/266621c-sm64-20261017/`, com PRX/ELF fixos, hashes, logs e PNGs.
@@ -96,6 +99,9 @@ O PRX tem SHA-256
 `94f64a934340317b21c70da6b61f3f6688c4d4128db1228645fb9b042eaf18c0`.
 Configurações, caches e saves do teste usam a pasta isolada no Mac; a ROM é lida
 do cartão, sem sobrescrever a instalação antiga.
+
+Ao concluir o teste, um único reset encerrou o emulador, o PSPLink reconectou,
+o diretório do shell voltou a `host0:/` e a trava compartilhada foi liberada.
 
 O controlador de acesso ao hardware está documentado em [PSPLINK.md](PSPLINK.md).
 
