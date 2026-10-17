@@ -71,7 +71,33 @@ de teste no PSP físico.
 - O PPSSPP também registrou funções de firmware não implementadas e falhas na
   abertura das fontes `flash0:/font/*.pgf`. A inspeção visual automática não
   estava disponível; não foi confirmada a apresentação correta da interface.
-- PSP físico, jogos, áudio e saves: ainda não testados.
+- Nessa etapa, PSP físico, jogos, áudio e saves ainda não tinham sido testados.
+
+### Teste físico via PSPLink em 17/10/2026
+
+O PRX da build `266621c733171022bff9ee264b1ab5e2b7128787` foi carregado no
+aparelho do usuário por `host0:`, com firmware base **6.61**, PSPLink **3.2.1**,
+CPU **333 MHz** e barramento **166 MHz**. A partição de usuário informou
+**57.671.680 bytes (55 MiB)**, antes de carregar o emulador. Esta é uma sessão
+com RAM ampliada; não comprova compatibilidade com PSP-1000.
+
+- Menu do Daedalus: imagem e fontes confirmadas em screenshot do PSP.
+- Super Mario 64, ROM de 8 MiB já existente no cartão: abertura e tela do rosto
+  do Mario confirmadas em screenshot, com geometria 3D e texturas.
+- `exprint`: **No exception occurred** após iniciar o jogo.
+- Plugin `mediaengine.prx` carregou; áudio permaneceu desabilitado pelo padrão
+  do upstream. Isso não comprova reprodução de áudio.
+- Gameplay, resposta aos controles, cadência/FPS e persistência de saves ainda
+  precisam de validação. Nenhum ganho de desempenho foi medido.
+
+Evidências locais em `dist/psplink/266621c-menu-20261017/` e
+`dist/psplink/266621c-sm64-20261017/`, com PRX/ELF fixos, hashes, logs e PNGs.
+O PRX tem SHA-256
+`94f64a934340317b21c70da6b61f3f6688c4d4128db1228645fb9b042eaf18c0`.
+Configurações, caches e saves do teste usam a pasta isolada no Mac; a ROM é lida
+do cartão, sem sobrescrever a instalação antiga.
+
+O controlador de acesso ao hardware está documentado em [PSPLINK.md](PSPLINK.md).
 
 Antes de otimizar, registre para cada teste: modelo do PSP, firmware, revisão da
 build, região/revisão do jogo, trecho testado, configurações, FPS, falhas gráficas,
