@@ -1,4 +1,21 @@
 # DaedalusX64
+
+## Fork pessoal para PSP
+
+Este fork de [DaedalusX64/daedalus](https://github.com/DaedalusX64/daedalus)
+é mantido em [jussimir/pessoal-pspn64emulator](https://github.com/jussimir/pessoal-pspn64emulator).
+A branch de trabalho é `psp-development`, baseada no commit upstream
+`580c0c409358db332149fc2903c610449434f8fc` de **10/10/2026**.
+
+Para gerar o pacote PSP com Docker:
+
+```sh
+./scripts/psp.sh
+```
+
+O ZIP será criado em `dist/`. Consulte [o guia de desenvolvimento PSP](docs/PSP.md)
+para instalação, testes e sincronização com o original. Esta base ainda não
+contém otimizações próprias de emulação.
  
 DaedalusX64 is a Nintendo 64 emulator for PSP, 3DS, Vita, Linux, macOS and Windows
  

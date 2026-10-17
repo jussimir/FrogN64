@@ -1,0 +1,28 @@
+name: PSP
+
+on:
+  push:
+    branches: [psp-development]
+  pull_request:
+    branches: [psp-development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build PSP package
+    runs-on: ubuntu-24.04
+    container:
+      image: pspdev/pspdev@sha256:54895e6f5afb71b8f4f6915ee6d5023e1e087ca7afdf2dcb1d7a694a5233e45f
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and package
+        run: bash scripts/psp.sh --native
+      - name: Upload PSP ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaedalusX64-PSP-${{ github.sha }}
+          path: dist/DaedalusX64-PSP-*.zip
+          if-no-files-found: error
