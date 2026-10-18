@@ -21,8 +21,12 @@ permite regressões locais antes do teste físico; não promete ganho de FPS.
 
 GoldenEye de 12 MiB prefere ROM em RAM nos modelos ampliados, habilitando seu
 atalho TLB e reduzindo a espera após a intro. Há fallback para File Cache se
-não couber. A [validação](GOLDENEYE.md) alcançou Dam no PPSSPP; a revisão ainda
-precisa de confirmação física. A abertura de ROMs usa a tela Frog com progresso.
+não couber. A [validação](GOLDENEYE.md) alcançou Dam no PPSSPP. No aparelho,
+Jussimir confirmou Select File em até cerca de 5 segundos e a abertura de Dam,
+mas relatou falhas durante a partida, ainda em investigação. A leitura inicial
+de ROMs usa a tela Frog com progresso; a preparação HLE ainda usa uma tela antiga.
+A faixa preta do céu em 16:9 com campo de visão ampliado foi corrigida e
+testada no PPSSPP. O FPS baixo relatado no aparelho continua em investigação.
 
 O empacotamento define explicitamente `MEMSIZE=1` para solicitar RAM ampliada
 nos modelos compatíveis. O padrão `MEMSIZE=2` da toolchain não ativa essa RAM no

@@ -116,6 +116,13 @@ preferências e saves próprios. Copia as fontes de `assets/flash0` para a NAND
 da sessão. Não altera configurações globais nem reinicia instâncias de outros
 projetos. Nenhum comando PSPLink é chamado.
 
+Saves e savestates eventualmente presentes no pacote de origem são removidos
+somente da cópia da sessão. Para usar um save de jogo conhecido, informe
+`--save-source /caminho/SaveGames`; os hashes iniciais ficam no resultado.
+Savestates PPSSPP não devem ser usados para comparar EBOOTs: também restauram
+o código executável antigo. Um save GoldenEye existente altera a intro e
+invalida comparações com uma sessão sem save.
+
 Com `--rom`, a ROM é validada pelo cabeçalho, copiada para o navegador da cópia
 de teste e selecionada por dois comandos X. O perfil inicial reproduz as
 principais opções usadas no teste físico do LEGO Racers: HLE, dynarec e suas
@@ -140,6 +147,33 @@ de instruções por vblank.
 `--rom-buffer cache|full` controla a preferência de buffering da ROM. O núcleo
 pode aplicar a exceção do GoldenEye de 12 MiB em modelos com RAM ampliada;
 o log `Frog ROM buffer: fixed|cache` identifica a decisão efetiva.
+
+`--viewport 4:3|stretch|16:9` seleciona respectivamente a imagem centralizada,
+o esticamento e o campo de visão ampliado. O padrão continua `stretch`.
+Para verificar o céu do GoldenEye no terceiro modo:
+
+```sh
+dist/headless-venv/bin/python Tools/headless.py \
+  --emulator /caminho/PPSSPPHeadless --tag goldeneye-sky \
+  --rom '/caminho/GoldenEye 007 (U) [!].V64' --viewport 16:9 \
+  --audio disabled --script tests/headless/goldeneye-widescreen.json \
+  --wall-seconds 90
+```
+
+Para amostrar a CPU ao entrar em Dam, troque o roteiro por
+`tests/headless/goldeneye-entry-profile.json` e acrescente
+`--profile-elf build/Source/daedalus --nm /caminho/psp-nm`.
+O ELF é congelado e seu código e layout de seções são confrontados com o PRX
+do EBOOT antes de usar os símbolos. A ação `profile_cpu` recebe `name`,
+`seconds` e `interval` em segundos (padrão 0,003, com pequena variação de fase).
+O JSON contém PCs PSP, símbolos C++/assembly, PCs N64 e contadores de listas
+gráficas/VI. Em `memmove`/`memcpy`, registra também o endereço de retorno.
+Essas rotinas são folhas nesta build; não é um desenrolamento geral de pilha.
+
+Os contadores de listas gráficas **não são FPS apresentados**. O perfil mede
+amostras no relógio emulado do PPSSPP, sem reproduzir fielmente os custos de
+cache, VFPU e GPU do aparelho. A velocidade de execução no Mac, especialmente
+com milhares de pausas do debugger, também não mede desempenho do PSP real.
 
 `wait_image` espera uma tela de referência, com `reference` relativo à raiz,
 `name`, `timeout`, `interval` (padrão 0,5 s), `crop` e `max_mse`. Registra o tempo

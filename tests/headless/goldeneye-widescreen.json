@@ -1,0 +1,127 @@
+[
+  {
+    "action": "wait",
+    "seconds": 2
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "wait",
+    "seconds": 4
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 4
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 0.2
+  },
+  {
+    "action": "wait_image",
+    "name": "file-select",
+    "reference": "tests/headless/reference/goldeneye-file-select-hd.png",
+    "crop": [
+      85,
+      224,
+      185,
+      248
+    ],
+    "max_mse": 20,
+    "timeout": 35,
+    "interval": 0.5,
+    "max_dark_seconds": 3
+  },
+  {
+    "action": "expect_log",
+    "text": "Frog ROM buffer: fixed (12582912 bytes)"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-0"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-1"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-2"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-3"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-4"
+  },
+  {
+    "action": "wait",
+    "seconds": 4
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 1
+  },
+  {
+    "action": "capture",
+    "name": "dam-entry"
+  },
+  {
+    "action": "wait_image",
+    "name": "dam-sky",
+    "reference": "tests/headless/reference/goldeneye-dam-hd-sky.png",
+    "crop": [
+      3,
+      1,
+      53,
+      9
+    ],
+    "max_mse": 100,
+    "timeout": 0.6,
+    "interval": 0.1
+  }
+]

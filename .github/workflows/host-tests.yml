@@ -21,7 +21,7 @@ jobs:
         run: cmake --build build-tests --parallel 2
       - name: Test
         run: ctest --test-dir build-tests --output-on-failure --output-junit audio-results.xml
-      - name: Check ROM header normalization
+      - name: Check headless tools
         run: python3 -m unittest discover -s tests/headless -p 'test_*.py'
       - name: Upload results
         if: always()

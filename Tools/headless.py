@@ -146,12 +146,16 @@ def main():
     ap.add_argument('--moltenvk', type=Path, default=Path('/Applications/PPSSPPSDL.app/Contents/Frameworks/libMoltenVK.dylib'))
     ap.add_argument('--package', type=Path, default=ROOT / 'dist/package/PSP/GAME/FrogN64')
     ap.add_argument('--rom', type=Path)
+    ap.add_argument('--save-source', type=Path, help='pasta SaveGames para reproduzir um save específico; padrão começa vazio')
     ap.add_argument('--render-debug', type=int, choices=range(32768), metavar='0..32767', help='máscara da build experimental de renderização LEGO')
     ap.add_argument('--audio', choices=['disabled', 'sync'], default='sync', help='ME/Async exige validação no PSP real')
     ap.add_argument('--no-hle', action='store_true')
     ap.add_argument('--n64-cpu', choices=['dynarec', 'interpreter'], default='dynarec')
     ap.add_argument('--no-n64-optimizations', action='store_true')
     ap.add_argument('--rom-buffer', choices=['cache', 'full'], default='cache', help='cache de arquivo ou ROM inteira em RAM')
+    ap.add_argument('--viewport', choices=['4:3', 'stretch', '16:9'], default='stretch')
+    ap.add_argument('--profile-elf', type=Path)
+    ap.add_argument('--nm', type=Path, help='psp-nm para simbolizar o perfil opcional')
     ap.add_argument('--cpu', choices=['jit', 'interpreter', 'ir', 'jit-ir'], default='jit')
     ap.add_argument('--backend', choices=['vulkan', 'software', 'gles', 'null'], default='vulkan')
     ap.add_argument('--tag', default=time.strftime('%Y%m%d-%H%M%S'))
@@ -189,6 +193,11 @@ def main():
             virtual_time += step.get('seconds', 0.12) + step.get('settle', 0.3)
         elif step['action'] == 'expect_log':
             if not step.get('text'): raise ValueError('expect_log precisa de text.')
+        elif step['action'] == 'profile_cpu':
+            if not args.profile_elf or not args.nm: raise ValueError('profile_cpu precisa de --profile-elf e --nm.')
+            if step['seconds'] <= 0 or step.get('interval', .003) <= 0: raise ValueError('Duração do perfil inválida.')
+            if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', step['name']): raise ValueError('Nome de perfil inválido.')
+            virtual_time += step['seconds']
         elif step['action'] == 'wait_image':
             if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', step['name']): raise ValueError('Nome de captura inválido.')
             if not (ROOT / step['reference']).is_file(): raise ValueError('Imagem de referência ausente.')
@@ -209,6 +218,39 @@ def main():
     stick = folder / 'memstick'
     game = stick / 'PSP/GAME/FrogN64'
     shutil.copytree(args.package, game)
+    # Local PSPLink tests may leave saves in the staging package. Never inherit
+    # them implicitly: they change boot/menu timing and invalidate comparisons.
+    for name in ['SaveGames', 'SaveStates']:
+        shutil.rmtree(game / name, ignore_errors=True)
+        (game / name).mkdir()
+    if args.save_source:
+        shutil.copytree(args.save_source, game / 'SaveGames', dirs_exist_ok=True)
+    profile_elf = None
+    if args.profile_elf:
+        profile_elf = folder / 'profile.elf'
+        shutil.copy2(args.profile_elf, profile_elf)
+        # Refuse symbols from a different PRX than the one in this PBP.
+        elf_data = profile_elf.read_bytes()
+        pbp = (game / 'EBOOT.PBP').read_bytes()
+        offsets = struct.unpack_from('<8I', pbp, 8)
+        prx = pbp[offsets[6]:offsets[7]]
+        # Relocation packing changes file offsets. Compare loaded-section
+        # addresses/sizes too, since the sampler also reads global counters.
+        def elf_identity(data):
+            section_offset = struct.unpack_from('<I', data, 32)[0]
+            size, count, names_index = struct.unpack_from('<HHH', data, 46)
+            sections = [struct.unpack_from('<10I', data, section_offset+i*size) for i in range(count)]
+            names = sections[names_index]
+            strings = data[names[4]:names[4]+names[5]]
+            layout = {}
+            code = None
+            for section in sections:
+                name = strings[section[0]:].split(b'\0',1)[0]
+                if section[2] & 2: layout[name] = (section[3], section[5])
+                if name == b'.text': code = data[section[4]:section[4]+section[5]]
+            if code is None: raise ValueError('ELF sem .text.')
+            return code, layout
+        if elf_identity(elf_data) != elf_identity(prx): raise ValueError('ELF de perfil não corresponde ao EBOOT.')
     nand = stick / 'PSP/NAND'
     shutil.copytree(emulator.parent / 'assets/flash0', nand / 'flash0')
     if args.render_debug is not None:
@@ -222,7 +264,8 @@ def main():
         target = game / 'Roms' / source.name
         shutil.copy2(source, target)
         rom_info = {'source': str(source), 'sha256': digest(target), 'id': ident}
-        (game / 'Preferences.ini').write_text('DisplayFramerate=yes\nLargeROMBuffer=' + ('yes' if args.rom_buffer == 'cache' else 'no') + '\nViewportType=2\nLanguage=English\n\n' +
+        viewport = {'4:3': 1, 'stretch': 2, '16:9': 3}[args.viewport]
+        (game / 'Preferences.ini').write_text('DisplayFramerate=yes\nLargeROMBuffer=' + ('yes' if args.rom_buffer == 'cache' else 'no') + f'\nViewportType={viewport}\nLanguage=English\n\n' +
             '{' + ident + '}\n' + f'PatchesEnabled={int(not args.no_hle)}\nSpeedSyncEnabled=1\n' +
             f'DynarecEnabled={int(args.n64_cpu == "dynarec")}\n' +
             f'DynarecLoopOptimisation={int(not args.no_n64_optimizations)}\n' +
@@ -240,7 +283,10 @@ def main():
     result = {'command': command, 'emulator': info, 'eboot_sha256': digest(game / 'EBOOT.PBP'),
         'rom': rom_info, 'script': steps, 'backend': args.backend, 'audio': args.audio,
         'psp_mhz': 333, 'hle': not args.no_hle, 'n64_cpu': args.n64_cpu, 'n64_optimizations': not args.no_n64_optimizations, 'render_debug': args.render_debug,
-        'rom_buffer': args.rom_buffer, 'plan_completed': False, 'captures': [], 'psp_hardware_used': False}
+        'rom_buffer': args.rom_buffer, 'viewport': args.viewport,
+        'save_source': str(args.save_source.resolve()) if args.save_source else None,
+        'initial_saves': {str(p.relative_to(game / 'SaveGames')): digest(p) for p in sorted((game / 'SaveGames').rglob('*')) if p.is_file()},
+        'plan_completed': False, 'captures': [], 'psp_hardware_used': False}
     debugger = None
     start = time.monotonic()
     with (folder / 'process.log').open('w') as log:
@@ -272,6 +318,11 @@ def main():
                 elif step['action'] == 'expect_log':
                     if step['text'] not in (folder / 'process.log').read_text(errors='replace'):
                         raise RuntimeError('Marcador esperado ausente: ' + step['text'])
+                elif step['action'] == 'profile_cpu':
+                    from cpu_profile import sample
+                    profile = sample(debugger, profile_elf, args.nm, step['seconds'], step.get('interval', .003))
+                    (folder / (step['name'] + '.json')).write_text(json.dumps(profile, indent=2))
+                    result.setdefault('profiles', []).append({k:v for k,v in profile.items() if k != 'rows'})
                 elif step['action'] == 'compare':
                     from compare_frames import compare
                     metrics=compare(folder / (step['left'] + '.png'), folder / (step['right'] + '.png'), step.get('crop'))

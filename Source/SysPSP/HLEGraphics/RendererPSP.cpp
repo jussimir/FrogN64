@@ -58,6 +58,7 @@ BaseRenderer * gRenderer    = nullptr;
 RendererPSP  * gRendererPSP = nullptr;
 
 extern void InitBlenderMode( u32 blender );
+extern u32 uViWidth;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 
@@ -742,7 +743,11 @@ void RendererPSP::TexRect( u32 tile_idx, const glm::vec2 & xy0, const glm::vec2 
 
 	glm::vec2 screen0;
 	glm::vec2 screen1;
-	if( gGlobalPreferences.ViewportType == VT_FULLSCREEN_HD )
+	// Keep HUD sprites in the central 4:3 region, but let backgrounds cover
+	// the widened scene. GoldenEye's sky is an oversized rectangle starting
+	// at x=0; centering it like a HUD sprite leaves 59 pixels unpainted.
+	const bool full_width = xy0.x <= 0.f && xy1.x >= float(uViWidth);
+	if( gGlobalPreferences.ViewportType == VT_FULLSCREEN_HD && !full_width )
 	{
 		screen0.x = roundf( roundf( HD_SCALE * xy0.x ) * mN64ToScreenScale.x + 59 );	//59 in translate is an ugly hack that only work on 480x272 display//Corn
 		screen0.y = roundf( roundf( xy0.y )            * mN64ToScreenScale.y + mN64ToScreenTranslate.y );

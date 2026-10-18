@@ -70,6 +70,69 @@ Evidências locais: `dist/headless/goldeneye-verified-dam/`,
 `dist/headless/goldeneye-measured-baseline/`, `dist/headless/goldeneye-final-gate/`
 e `dist/headless/loader-allocation-fallback/`.
 
-Ainda falta confirmar esta revisão no PSP físico e testar outras missões,
-saves de longo prazo e finalização do jogo. A chegada a Dam não comprova que
-GoldenEye inteiro pode ser concluído sem outros defeitos.
+## Confirmação física da abertura — 17/10/2026
+
+A revisão `db2339cd9de80f97f0edf7de27fc763b333d2dbf` foi instalada com
+backup e leitura de volta por SHA-256. O PSPLink confirmou ROM fixa de
+12.582.912 bytes, CPU 333 MHz, barramento 166 MHz e nenhuma exceção inicial.
+Jussimir confirmou a transição até Select File em até aproximadamente
+5 segundos. É uma estimativa manual, distinta da medição no PPSSPP.
+
+Jussimir também confirmou que Dam carrega, mas relatou FPS baixo e falhas nos
+cantos da tela em 16:9. O usuário esclareceu que "lag" significa FPS baixo,
+não atraso de entrada. Não confirmou um defeito de mapeamento dos controles. Esses problemas continuam em investigação; a partida não está aprovada.
+Evidências locais: `dist/psplink/goldeneye-db2339c-psp/`, com PRX fixo,
+screenshots e `physical-check.json`.
+
+A preparação HLE ainda exibiu a tela antiga "Variables Identified: 76%" no
+primeiro boot. Essa etapa ainda precisa ser integrada ao carregamento Frog;
+não é a tela de leitura da ROM que já recebeu o novo visual.
+
+## Investigação local de 16:9 e CPU
+
+Sem acessar o aparelho, foi reproduzida uma faixa preta de aproximadamente
+59 pixels no canto esquerdo do modo `VT_FULLSCREEN_HD` (campo de visão
+ampliado). O modo `VT_FULLSCREEN` apenas estica a imagem e não apresentou
+essa faixa nas capturas locais. Isso identifica uma falha concreta; ainda não
+confirma que explica todos os cantos relatados no teste físico.
+
+O caminho `DLParser_RDPHalf1_GE` representa o céu com um retângulo grande,
+começando em x=0. `RendererPSP::TexRect` aplicava a mesma centralização 4:3
+a esse fundo e aos sprites do HUD, deslocando seu início para x=59.
+A correção mantém retângulos que cobrem a largura inteira na transformação
+da tela completa. Sprites menores continuam centralizados como antes.
+
+Antes e depois, na entrada da mesma missão:
+
+![Céu com faixa preta à esquerda](images/goldeneye-hd-sky-before.png)
+![Céu preenchendo o canto esquerdo](images/goldeneye-hd-sky-after.png)
+
+`tests/headless/goldeneye-widescreen.json` reconhece Select File na projeção
+16:9, navega até Dam e compara a faixa superior esquerda com uma referência.
+O teste reprovou o EBOOT `db2339cd` e aprovou a correção. A comparação
+controlada usa saves inicialmente vazios nos dois lados. A chegada a Dam no
+modo esticado também foi repetida com `goldeneye-dam.json`.
+LEGO Racers foi comparado em 16:9 com a mesma sequência nas duas builds:
+a primeira tela de seleção ficou idêntica (MSE zero); nas capturas posteriores,
+com o piloto animado, o MSE ficou entre 2,24 e 4,54 na imagem completa.
+Isso preserva os casos observados, sem certificar todo jogo em widescreen.
+
+O novo amostrador `Tools/cpu_profile.py` aponta custo na execução/gestão do
+recompilador e em cópias de memória. Na janela de três segundos da entrada
+de Dam, o controle registrou 95/1000 amostras em `memmove`; 94 retornavam à
+inserção de fragmentos em `CFragmentCache`. Essa implementação mantém um vetor
+ordenado e desloca entradas ao inserir blocos. É um candidato para otimização,
+não uma demonstração de que sozinho explica o FPS baixo. A janela inclui a
+cinemática e compilação inicial; não é um benchmark de partida estabilizada.
+Nenhuma otimização de CPU foi aplicada nesta mudança.
+
+Evidências locais: `dist/headless/goldeneye-controlled-baseline-hd/`,
+`dist/headless/goldeneye-controlled-fix-hd/`,
+`dist/headless/goldeneye-hd-sky-regression-control/`,
+`dist/headless/goldeneye-hd-sky-regression-pass/` e
+`dist/headless/goldeneye-sky-fix-stretch/`. Os executáveis e ROMs ficam
+congelados nessas sessões; não são distribuídos como evidência no Git.
+
+Outras missões, saves de longo prazo e finalização do jogo continuam sem
+validação. A chegada a Dam não comprova que GoldenEye inteiro pode ser
+concluído sem outros defeitos.
