@@ -14,6 +14,8 @@ pausa. As opções de emulação, controles, cheats e savestates usam o código 
 DaedalusX64. A fila de áudio recebeu correções cobertas por testes sintéticos.
 O renderizador PSP corrige torsos de LEGO Racers e o recorte vertical das prévias;
 veja as [comparações gráficas](docs/LEGO-RACERS.md).
+O [GoldenEye](docs/GOLDENEYE.md) usa ROM em RAM nos modelos compatíveis para
+reduzir a demora após a intro. O carregamento tem o visual Frog e barra de progresso.
 Não há ganho de FPS medido.
 
 ![Menu FrogN64 no PSP real](docs/images/frogn64-menu.png)

@@ -151,6 +151,7 @@ def main():
     ap.add_argument('--no-hle', action='store_true')
     ap.add_argument('--n64-cpu', choices=['dynarec', 'interpreter'], default='dynarec')
     ap.add_argument('--no-n64-optimizations', action='store_true')
+    ap.add_argument('--rom-buffer', choices=['cache', 'full'], default='cache', help='cache de arquivo ou ROM inteira em RAM')
     ap.add_argument('--cpu', choices=['jit', 'interpreter', 'ir', 'jit-ir'], default='jit')
     ap.add_argument('--backend', choices=['vulkan', 'software', 'gles', 'null'], default='vulkan')
     ap.add_argument('--tag', default=time.strftime('%Y%m%d-%H%M%S'))
@@ -188,6 +189,11 @@ def main():
             virtual_time += step.get('seconds', 0.12) + step.get('settle', 0.3)
         elif step['action'] == 'expect_log':
             if not step.get('text'): raise ValueError('expect_log precisa de text.')
+        elif step['action'] == 'wait_image':
+            if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', step['name']): raise ValueError('Nome de captura inválido.')
+            if not (ROOT / step['reference']).is_file(): raise ValueError('Imagem de referência ausente.')
+            if step['timeout'] <= 0 or step.get('interval', .5) <= 0: raise ValueError('Espera de imagem inválida.')
+            virtual_time += step['timeout']
         elif step['action'] == 'capture':
             if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', step['name']): raise ValueError('Nome de captura inválido.')
         elif step['action'] == 'compare':
@@ -216,7 +222,7 @@ def main():
         target = game / 'Roms' / source.name
         shutil.copy2(source, target)
         rom_info = {'source': str(source), 'sha256': digest(target), 'id': ident}
-        (game / 'Preferences.ini').write_text('DisplayFramerate=yes\nLargeROMBuffer=yes\nViewportType=2\nLanguage=English\n\n' +
+        (game / 'Preferences.ini').write_text('DisplayFramerate=yes\nLargeROMBuffer=' + ('yes' if args.rom_buffer == 'cache' else 'no') + '\nViewportType=2\nLanguage=English\n\n' +
             '{' + ident + '}\n' + f'PatchesEnabled={int(not args.no_hle)}\nSpeedSyncEnabled=1\n' +
             f'DynarecEnabled={int(args.n64_cpu == "dynarec")}\n' +
             f'DynarecLoopOptimisation={int(not args.no_n64_optimizations)}\n' +
@@ -234,7 +240,7 @@ def main():
     result = {'command': command, 'emulator': info, 'eboot_sha256': digest(game / 'EBOOT.PBP'),
         'rom': rom_info, 'script': steps, 'backend': args.backend, 'audio': args.audio,
         'psp_mhz': 333, 'hle': not args.no_hle, 'n64_cpu': args.n64_cpu, 'n64_optimizations': not args.no_n64_optimizations, 'render_debug': args.render_debug,
-        'plan_completed': False, 'captures': [], 'psp_hardware_used': False}
+        'rom_buffer': args.rom_buffer, 'plan_completed': False, 'captures': [], 'psp_hardware_used': False}
     debugger = None
     start = time.monotonic()
     with (folder / 'process.log').open('w') as log:
@@ -271,6 +277,27 @@ def main():
                     metrics=compare(folder / (step['left'] + '.png'), folder / (step['right'] + '.png'), step.get('crop'))
                     result.setdefault('comparisons', []).append({'left':step['left'], 'right':step['right'], **metrics})
                     if metrics['mse']>step.get('max_mse', 0): raise RuntimeError('Comparação de imagens falhou: ' + str(metrics))
+                elif step['action'] == 'wait_image':
+                    from compare_frames import compare
+                    from PIL import Image
+                    elapsed = black = longest_black = 0
+                    target = folder / (step['name'] + '.png')
+                    while elapsed < step['timeout']:
+                        interval = min(step.get('interval', .5), step['timeout'] - elapsed)
+                        debugger.run(interval); elapsed += interval
+                        capture = debugger.screenshot(target)
+                        with Image.open(target) as frame:
+                            dark = max(hi for lo, hi in frame.convert('RGB').getextrema()) <= 20
+                        black = black + interval if dark else 0
+                        longest_black = max(longest_black, black)
+                        metrics = compare(target, ROOT / step['reference'], step.get('crop'))
+                        if metrics['mse'] <= step.get('max_mse', 0): break
+                    result.setdefault('image_waits', []).append({'name':step['name'], 'elapsed_seconds':elapsed,
+                        'longest_dark_sample_seconds':longest_black, 'interval':step.get('interval', .5), **metrics})
+                    result['captures'].append({'name':step['name'], **capture})
+                    if metrics['mse'] > step.get('max_mse', 0): raise RuntimeError('Tela esperada não apareceu: ' + step['name'])
+                    if longest_black > step.get('max_dark_seconds', float('inf')):
+                        raise RuntimeError('Intervalo escuro excedido: ' + str(longest_black))
                 else:
                     result['captures'].append({'name': step['name'], **debugger.screenshot(folder / (step['name'] + '.png'))})
             final = debugger.request('cpu.status')

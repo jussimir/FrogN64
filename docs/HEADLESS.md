@@ -137,6 +137,17 @@ O clock PSP fica explicitamente em 333 MHz. A execução acima de realtime
 resulta de rodar o host sem limitação de velocidade; mantém esse orçamento
 de instruções por vblank.
 
+`--rom-buffer cache|full` controla a preferência de buffering da ROM. O núcleo
+pode aplicar a exceção do GoldenEye de 12 MiB em modelos com RAM ampliada;
+o log `Frog ROM buffer: fixed|cache` identifica a decisão efetiva.
+
+`wait_image` espera uma tela de referência, com `reference` relativo à raiz,
+`name`, `timeout`, `interval` (padrão 0,5 s), `crop` e `max_mse`. Registra o tempo
+até a imagem e a maior sequência de amostras escuras (todos os canais até 20).
+`max_dark_seconds` pode impor um limite a essa sequência. Não mede cada frame:
+a duração tem a resolução do intervalo de amostragem. A espera falha se não
+encontrar a tela e evita enviar inputs de outro menu durante um carregamento.
+
 Capturas, WAV, log, respostas do debugger e `result.json` ficam juntos. O
 resultado distingue plano concluído, erro e código de saída: não basta o
 PPSSPP retornar zero. O limite emulado é o encerramento normal após o roteiro;
@@ -219,6 +230,22 @@ de outra build restaura o código antigo e invalida o teste A/B. Para comparar
 builds, use o mesmo roteiro desde o boot, ou um estado N64 carregado pelo próprio
 FrogN64 com a ROM correspondente. O runner atual sempre começa pelo boot.
 
+
+## GoldenEye e progresso de abertura
+
+```sh
+dist/headless-venv/bin/python Tools/headless.py --tag goldeneye-dam \
+  --rom '/caminho/GoldenEye 007 (U) [!].V64' --audio disabled \
+  --script tests/headless/goldeneye-dam.json --wall-seconds 60
+dist/headless-venv/bin/python Tools/headless.py --tag loading-progress \
+  --rom '/caminho/GoldenEye 007 (U) [!].V64' --audio disabled \
+  --script tests/headless/loading-progress.json
+```
+
+O primeiro roteiro exige Select File por imagem e o buffer fixo no log antes
+de navegar até Dam. Limita a sequência escura amostrada a 3 segundos na espera.
+O segundo captura a tela Frog em intervalos de 20 ms durante a leitura.
+As medidas, os limites e a reprodução anterior estão em [GOLDENEYE.md](GOLDENEYE.md).
 
 ## Diagnóstico gráfico separado
 

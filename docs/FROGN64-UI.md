@@ -38,6 +38,22 @@ por jogo, opções avançadas, cheats, configurações gerais, screenshot e reto
 ao menu principal. As telas detalhadas de configurações e slots continuam
 usando os componentes do DaedalusX64, com as cores do FrogN64.
 
+## Carregamento de jogos
+
+A abertura usa o mesmo fundo verde, marca Frog, textos creme e paleta do menu.
+Durante a leitura completa da ROM, a barra e o percentual acompanham os bytes
+efetivamente lidos, com o total em MiB. Não há atraso artificial para exibir a
+animação. Os redesenhos são limitados a cerca de 20 por segundo.
+
+Com File Cache, a ROM é lida sob demanda durante o jogo; nessa abertura, a
+barra acompanha as etapas concluídas de inicialização. Ao terminar a leitura
+completa, a indicação muda para Starting game enquanto conclui a preparação.
+
+![Carregamento Frog com progresso real](images/frog-loading.png)
+
+Essa tela pertence à abertura da ROM. Ela não é sobreposta aos fades ou às
+telas escuras produzidas pelo jogo durante a emulação.
+
 ## Créditos e recursos visuais
 
 FrogGBA: tzubertowski (Prosty) e colaboradores, baseado em gpSP/TempGBA de

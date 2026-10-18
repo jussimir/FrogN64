@@ -32,13 +32,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Stream.h"
 
 
-#include <cstring> 
+#include <cstring>
+#include <cstdio>
 
 #ifdef DAEDALUS_PSP
-#include "Graphics/GraphicsContext.h"
-#ifdef INTRAFONT
- #include "intraFont.h"
-#endif
+#include "UI/FrogLoadingScreen.h"
 
 extern bool PSP_IS_SLIM;
 #endif
@@ -64,9 +62,14 @@ namespace
 	const u32		SCRATCH_BUFFER_LENGTH = 16;
 	u8				sScratchBuffer[ SCRATCH_BUFFER_LENGTH ];
 
-	bool		ShouldLoadAsFixed( u32 rom_size [[maybe_unused]] )
+	bool		ShouldLoadAsFixed( u32 rom_size [[maybe_unused]], bool goldeneye [[maybe_unused]] )
 	{
 #if	defined(DAEDALUS_PSP)
+		// GoldenEye executes ROM code through its 0x7f TLB mapping. The
+		// direct mapping in Memory_Tlb_Hack requires a stable ROM address.
+		// Retail 12 MiB images fit the existing 16 MiB ROM heap on Slim+.
+		if (PSP_IS_SLIM && goldeneye && rom_size == 12 * 1024 * 1024)
+			return true;
 		if (PSP_IS_SLIM && !gGlobalPreferences.LargeROMBuffer)
 			return rom_size <= 32 * 1024 * 1024;
 		else
@@ -206,57 +209,44 @@ bool RomBuffer::Open()
 
 	sRomSize = p_rom_file->GetRomSize();
 
-	if( ShouldLoadAsFixed( sRomSize ) )
-	{
-		// Now, allocate memory for rom - round up to a 4 byte boundry
-		u32		size_aligned =  AlignPow2( sRomSize, 4 );
-		u8 *	p_bytes =  (u8*)CROMFileMemory::Get()->Alloc( size_aligned );
-
-#ifndef DAEDALUS_PSP
-		if( !p_rom_file->LoadData( sRomSize, p_bytes, messages ) )
-		{
-			#ifdef DAEDALUS_DEBUG_CONSOLE
-			DBGConsole_Msg(0, "Failed to load [C%s]\n", filename.c_str());
-			#endif
-			CROMFileMemory::Get()->Free( p_bytes );
-			return false;
-		}
-#else
-		u32 offset = 0;
-		u32 length_remaining( sRomSize );
-		const u32 TEMP_BUFFER_SIZE = 128 * 1024;
-		#ifdef INTRAFONT
-		intraFont* ltn8  = intraFontLoad( "flash0:/font/ltn8.pgf", INTRAFONT_CACHE_ASCII);
-		intraFontSetStyle( ltn8, 1.5f, 0xFFFFFFFF, 0, 0.f, INTRAFONT_ALIGN_CENTER );
-		#endif
-		while( offset < sRomSize )
-		{
-			u32 length_to_process( std::min( length_remaining, TEMP_BUFFER_SIZE ) );
-
-			if( !p_rom_file->ReadChunk( offset, p_bytes + offset, length_to_process ) )
-			{
-				break;
-			}
-
-			offset += length_to_process;
-			length_remaining -= length_to_process;
-
-			CGraphicsContext::Get()->BeginFrame();
-			CGraphicsContext::Get()->ClearToBlack();
-			#ifdef INTRAFONT
-			intraFontPrintf( ltn8, 480/2, (272>>1), "Buffering ROM %d%%...", offset * 100 / sRomSize );
-			#endif
-			CGraphicsContext::Get()->EndFrame();
-			CGraphicsContext::Get()->UpdateFrame( false );
-		}
-	#ifdef INTRAFONT
-		 intraFontUnload( ltn8 );
-	#endif
+    bool goldeneye = false;
+#ifdef DAEDALUS_PSP
+    ROMHeader header{};
+    if (!p_rom_file->ReadChunk(0, reinterpret_cast<u8 *>(&header), sizeof(header))) return false;
+    ROMFile::ByteSwap_3210(&header, sizeof(header));
+    goldeneye = header.CartID[0] == 'G' && header.CartID[1] == 'E';
 #endif
-		spRomData = p_bytes;
-		sRomFixed = true;
+    u8 *p_bytes = nullptr;
+    if (ShouldLoadAsFixed(sRomSize, goldeneye))
+        p_bytes = static_cast<u8 *>(CROMFileMemory::Get()->Alloc(AlignPow2(sRomSize, 4)));
 
-	}
+    // Allocation failure must fall back to the file cache, never read into null.
+    if (p_bytes)
+    {
+#ifndef DAEDALUS_PSP
+        if (!p_rom_file->LoadData(sRomSize, p_bytes, messages))
+        {
+            CROMFileMemory::Get()->Free(p_bytes);
+            return false;
+        }
+#else
+        FrogLoadingScreen::Reading(0, sRomSize);
+        u32 offset = 0;
+        while (offset < sRomSize)
+        {
+            const u32 length = std::min<u32>(sRomSize - offset, 128 * 1024);
+            if (!p_rom_file->ReadChunk(offset, p_bytes + offset, length))
+            {
+                CROMFileMemory::Get()->Free(p_bytes);
+                return false;
+            }
+            offset += length;
+            FrogLoadingScreen::Reading(offset, sRomSize);
+        }
+#endif
+        spRomData = p_bytes;
+        sRomFixed = true;
+    }
 	else
 	{
 #ifdef DAEDALUS_COMPRESSED_ROM_SUPPORT
@@ -312,6 +302,7 @@ bool RomBuffer::Open()
 		sRomFixed = false;
 	}
 
+    std::printf("Frog ROM buffer: %s (%lu bytes)\n", sRomFixed ? "fixed" : "cache", static_cast<unsigned long>(sRomSize));
 	DBGConsole_Msg(0, "Opened [C%s]\n", filename.string().c_str());
 	sRomLoaded = true;
 

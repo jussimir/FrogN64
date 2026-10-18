@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "System/SystemInit.h"
 #ifdef DAEDALUS_PSP
 #include "SysPSP/Graphics/VideoMemoryManager.h"
+#include "UI/FrogLoadingScreen.h"
 #endif
 
 #include "Graphics/GraphicsContext.h"
@@ -232,6 +233,9 @@ bool System_Init()
 bool System_Open(const std::filesystem::path &filename)
 {
 	g_ROM.mFileName = filename;
+#ifdef DAEDALUS_PSP
+    FrogLoadingScreen::Begin(filename);
+#endif
 	
 	for (u32 i = 0; i < gRomInitTable.size(); i++)
 	{
@@ -244,13 +248,21 @@ bool System_Open(const std::filesystem::path &filename)
 	#endif
 		if (!entry.open())
 		{
+#ifdef DAEDALUS_PSP
+            FrogLoadingScreen::End();
+#endif
 				#ifdef DAEDALUS_DEBUG_CONSOLE
 			DBGConsole_Msg(0, "==>Open %s [RFAILED]", entry.name);
 			#endif
 			return false;
 		}
+#ifdef DAEDALUS_PSP
+        FrogLoadingScreen::Preparing(i + 1, gRomInitTable.size());
+#endif
 	}
-
+#ifdef DAEDALUS_PSP
+    FrogLoadingScreen::End();
+#endif
 	return true;
 }
 
@@ -271,6 +283,10 @@ void System_Close()
 
 void System_Finalize()
 {
+#ifdef DAEDALUS_PSP
+    // UIContext's destructor clears the display; release it before graphics.
+    FrogLoadingScreen::Shutdown();
+#endif
 	for(s32 i = gSysInitTable.size() - 1; i >= 0; i--)
 	{
 		const SysEntityEntry & entry = gSysInitTable[i];

@@ -19,6 +19,11 @@ foram feitas no PPSSPP, ainda sem confirmação desta build no aparelho.
 O [ambiente headless](HEADLESS.md)
 permite regressões locais antes do teste físico; não promete ganho de FPS.
 
+GoldenEye de 12 MiB prefere ROM em RAM nos modelos ampliados, habilitando seu
+atalho TLB e reduzindo a espera após a intro. Há fallback para File Cache se
+não couber. A [validação](GOLDENEYE.md) alcançou Dam no PPSSPP; a revisão ainda
+precisa de confirmação física. A abertura de ROMs usa a tela Frog com progresso.
+
 O empacotamento define explicitamente `MEMSIZE=1` para solicitar RAM ampliada
 nos modelos compatíveis. O padrão `MEMSIZE=2` da toolchain não ativa essa RAM no
 PPSSPP 1.20.4, e a base original encerrou com `std::bad_alloc` na inicialização.

@@ -1,0 +1,126 @@
+[
+  {
+    "action": "wait",
+    "seconds": 2
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "press",
+    "button": "cross"
+  },
+  {
+    "action": "wait",
+    "seconds": 4
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 4
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 0.2
+  },
+  {
+    "action": "wait_image",
+    "name": "file-select",
+    "reference": "tests/headless/reference/goldeneye-file-select.png",
+    "crop": [
+      40,
+      224,
+      208,
+      248
+    ],
+    "max_mse": 20,
+    "timeout": 35,
+    "interval": 0.5,
+    "max_dark_seconds": 3
+  },
+  {
+    "action": "expect_log",
+    "text": "Frog ROM buffer: fixed (12582912 bytes)"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-0"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-1"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-2"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-3"
+  },
+  {
+    "action": "press",
+    "button": "start",
+    "seconds": 0.1,
+    "settle": 2
+  },
+  {
+    "action": "capture",
+    "name": "menu-4"
+  },
+  {
+    "action": "wait",
+    "seconds": 20
+  },
+  {
+    "action": "capture",
+    "name": "dam-intro"
+  },
+  {
+    "action": "wait",
+    "seconds": 8
+  },
+  {
+    "action": "capture",
+    "name": "dam-gameplay"
+  },
+  {
+    "action": "analog",
+    "x": 0,
+    "y": 1,
+    "seconds": 2,
+    "settle": 0.2
+  },
+  {
+    "action": "capture",
+    "name": "dam-movement"
+  }
+]

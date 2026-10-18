@@ -38,5 +38,5 @@ list(APPEND daed_libs "UI")
 set(daed_libs ${daed_libs} PARENT_SCOPE)
 
 if(PSP)
-    target_sources(UI PRIVATE FrogMenuScreen.cpp)
+    target_sources(UI PRIVATE FrogMenuScreen.cpp FrogLoadingScreen.cpp)
 endif()
