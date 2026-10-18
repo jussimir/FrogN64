@@ -73,7 +73,8 @@ fi
     printf 'Revision: %s\nWorking tree: %s\n' "$revision" "$tree_state"
     printf 'Built at (UTC): %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     printf 'Reference toolchain image: %s\n' "$image"
-    psp-g++ --version | head -n 1
+    # Consume the complete output: head can SIGPIPE the compiler under pipefail.
+    psp-g++ --version | sed -n '1p'
 } > "$package/BUILD-INFO.txt"
 
 archive="FrogN64-PSP-${revision:0:8}.zip"
